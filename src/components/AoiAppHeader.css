@@ -1,0 +1,65 @@
+.aoi-app-header {
+  align-items: center;
+  background: var(--safir-header);
+  border-bottom: 1px solid var(--safir-border);
+  color: var(--safir-text);
+  display: flex;
+  font-family: var(--safir-font);
+  height: 48px;
+  justify-content: space-between;
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.aoi-app-header__brand,
+.aoi-app-header__actions {
+  align-items: center;
+  display: flex;
+}
+
+.aoi-app-header__brand {
+  gap: 12px;
+}
+
+.aoi-app-header__logo {
+  display: block;
+  height: 24px;
+  object-fit: contain;
+  width: 24px;
+}
+
+.aoi-app-header__brand strong {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.aoi-app-header__brand em {
+  color: var(--safir-text-muted);
+  font-size: 12px;
+}
+
+.aoi-app-header__actions {
+  gap: 8px;
+}
+
+.aoi-app-header__actions > span {
+  color: var(--safir-text-subtle);
+  font-family: var(--safir-mono-font);
+  font-size: 12px;
+}
+
+.aoi-app-header__actions > button {
+  align-items: center;
+  background: var(--safir-control);
+  border: 1px solid var(--safir-border-strong);
+  border-radius: 2px;
+  color: var(--safir-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}

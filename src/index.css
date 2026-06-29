@@ -1,0 +1,38 @@
+@layer reset, base, components;
+
+@layer reset {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+}
+
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    letter-spacing: 0;
+    min-height: 100svh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+  }
+}

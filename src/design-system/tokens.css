@@ -1,0 +1,203 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap");
+
+@layer asds-tokens, aoi-overrides;
+
+@layer asds-tokens {
+  :root {
+    color-scheme: light;
+
+    --asds-font-family-sans: "Aptos", "Segoe UI", system-ui, sans-serif;
+    --asds-font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    --asds-color-white: #ffffff;
+    --asds-color-ink-900: #1f2329;
+    --asds-color-ink-700: #424a55;
+    --asds-color-ink-500: #687282;
+    --asds-color-ink-300: #a8b0bb;
+    --asds-color-ink-100: #e7ebef;
+    --asds-color-ink-050: #f6f8fa;
+    --asds-color-primary-700: #174f8a;
+    --asds-color-primary-600: #2368a8;
+    --asds-color-primary-100: #dbeaf7;
+    --asds-color-success-600: #18764d;
+    --asds-color-warning-600: #9f6415;
+    --asds-color-danger-600: #b42318;
+
+    --asds-radius-xs: 4px;
+    --asds-radius-sm: 6px;
+    --asds-radius-md: 8px;
+    --asds-radius-lg: 12px;
+
+    --asds-space-1: 4px;
+    --asds-space-2: 8px;
+    --asds-space-3: 12px;
+    --asds-space-4: 16px;
+    --asds-space-5: 20px;
+    --asds-space-6: 24px;
+    --asds-space-8: 32px;
+
+    --asds-shadow-raised: 0 14px 32px rgb(31 35 41 / 10%);
+    --asds-focus-ring: 0 0 0 3px rgb(35 104 168 / 24%);
+  }
+}
+
+@layer aoi-overrides {
+  :root,
+  :root[data-brand="oui"] {
+    --aoi-white: #ffffff;
+    --aoi-black: #000000;
+
+    --aoi-primary-1: #045d54;
+    --aoi-primary-2: #00917e;
+    --aoi-primary-3: #00e2be;
+    --aoi-primary-4: #3affe5;
+    --aoi-primary-5: #c0fff6;
+
+    --aoi-dark-gray-1: #1c2127;
+    --aoi-dark-gray-2: #252a31;
+    --aoi-dark-gray-3: #2f343c;
+    --aoi-dark-gray-4: #383e47;
+    --aoi-dark-gray-5: #404854;
+
+    --aoi-gray-1: #5f6b7c;
+    --aoi-gray-2: #738091;
+    --aoi-gray-3: #8f99a8;
+    --aoi-gray-4: #abb3bf;
+    --aoi-gray-5: #c5cbd3;
+
+    --aoi-light-gray-1: #d3d8de;
+    --aoi-light-gray-2: #dce0e5;
+    --aoi-light-gray-3: #e5e8eb;
+    --aoi-light-gray-4: #edeff2;
+    --aoi-light-gray-5: #f6f7f9;
+
+    --aoi-red-1: #8e292c;
+    --aoi-red-2: #ac2f33;
+    --aoi-red-3: #cd4246;
+    --aoi-red-4: #e76a6e;
+    --aoi-red-5: #fa999c;
+
+    --aoi-orange-1: #77450d;
+    --aoi-orange-2: #935610;
+    --aoi-orange-3: #c87619;
+    --aoi-orange-4: #ec9a3c;
+    --aoi-orange-5: #fbb360;
+
+    --aoi-green-1: #165a36;
+    --aoi-green-2: #1c6e42;
+    --aoi-green-3: #238551;
+    --aoi-green-4: #32a467;
+    --aoi-green-5: #72ca9b;
+
+    --aoi-gold-1: #5c4405;
+    --aoi-gold-2: #866103;
+    --aoi-gold-3: #d1980b;
+    --aoi-gold-4: #f0b726;
+    --aoi-gold-5: #fbd065;
+
+    --aoi-blue-1: #184a90;
+    --aoi-blue-2: #215db0;
+    --aoi-blue-3: #2d72d2;
+    --aoi-blue-4: #4c90f0;
+    --aoi-blue-5: #8abbff;
+
+    --aoi-cerulean-1: #0c5174;
+    --aoi-cerulean-2: #0f6894;
+    --aoi-cerulean-3: #147eb3;
+    --aoi-cerulean-4: #3fa6da;
+    --aoi-cerulean-5: #68c1ee;
+
+    --aoi-turquoise-1: #004d46;
+    --aoi-turquoise-2: #007067;
+    --aoi-turquoise-3: #00a396;
+    --aoi-turquoise-4: #13c9ba;
+    --aoi-turquoise-5: #7ae1d8;
+
+    --aoi-forest-1: #1d7324;
+    --aoi-forest-2: #238c2c;
+    --aoi-forest-3: #29a634;
+    --aoi-forest-4: #43bf4d;
+    --aoi-forest-5: #62d96b;
+
+    --aoi-lime-1: #43501b;
+    --aoi-lime-2: #5a701a;
+    --aoi-lime-3: #8eb125;
+    --aoi-lime-4: #b6d94c;
+    --aoi-lime-5: #d4f17e;
+
+    --aoi-sepia-1: #5e4123;
+    --aoi-sepia-2: #7a542e;
+    --aoi-sepia-3: #946638;
+    --aoi-sepia-4: #af855a;
+    --aoi-sepia-5: #d0b090;
+
+    --aoi-vermilion-1: #96290d;
+    --aoi-vermilion-2: #b83211;
+    --aoi-vermilion-3: #d33d17;
+    --aoi-vermilion-4: #eb6847;
+    --aoi-vermilion-5: #ff9980;
+
+    --aoi-rose-1: #a82255;
+    --aoi-rose-2: #c22762;
+    --aoi-rose-3: #db2c6f;
+    --aoi-rose-4: #f5498b;
+    --aoi-rose-5: #ff66a1;
+
+    --aoi-violet-1: #5c255c;
+    --aoi-violet-2: #7c327c;
+    --aoi-violet-3: #9d3f9d;
+    --aoi-violet-4: #bd6bbd;
+    --aoi-violet-5: #d69fd6;
+
+    --aoi-indigo-1: #5642a6;
+    --aoi-indigo-2: #634dbf;
+    --aoi-indigo-3: #7961db;
+    --aoi-indigo-4: #9881f3;
+    --aoi-indigo-5: #bdadff;
+
+    --font-sans: var(--asds-font-family-sans);
+    --font-mono: var(--asds-font-family-mono);
+    --safir-font: "Source Sans 3", "Source Sans Pro", var(--font-sans);
+    --safir-mono-font: "Inter", var(--font-sans);
+
+    --color-canvas: var(--aoi-light-gray-5);
+    --color-surface: var(--aoi-white);
+    --color-surface-muted: var(--aoi-light-gray-4);
+    --color-surface-strong: var(--aoi-primary-5);
+    --color-text: var(--aoi-dark-gray-1);
+    --color-text-muted: var(--aoi-gray-1);
+    --color-text-soft: var(--aoi-gray-3);
+    --color-border: var(--aoi-light-gray-2);
+    --color-border-strong: var(--aoi-gray-4);
+    --color-action: var(--aoi-primary-2);
+    --color-action-hover: var(--aoi-primary-1);
+    --color-action-soft: var(--aoi-primary-5);
+    --color-accent: var(--aoi-primary-3);
+    --color-success: var(--aoi-green-3);
+    --color-warning: var(--aoi-orange-3);
+    --color-danger: var(--aoi-red-3);
+
+    --safir-bg: var(--aoi-dark-gray-1);
+    --safir-header: var(--aoi-dark-gray-2);
+    --safir-panel: var(--aoi-dark-gray-2);
+    --safir-panel-alt: var(--aoi-dark-gray-3);
+    --safir-control: var(--aoi-dark-gray-4);
+    --safir-control-strong: var(--aoi-dark-gray-5);
+    --safir-border: rgb(255 255 255 / 10%);
+    --safir-border-strong: rgb(255 255 255 / 20%);
+    --safir-text: var(--aoi-light-gray-5);
+    --safir-text-muted: var(--aoi-light-gray-1);
+    --safir-text-subtle: var(--aoi-gray-3);
+    --safir-primary: var(--aoi-primary-4);
+    --safir-primary-strong: var(--aoi-primary-3);
+    --safir-primary-hover: rgb(0 226 190 / 10%);
+    --safir-positive: var(--aoi-green-4);
+    --safir-series-muted: var(--aoi-gray-2);
+    --safir-grid: var(--aoi-dark-gray-4);
+
+    --radius-control: var(--asds-radius-sm);
+    --radius-panel: var(--asds-radius-md);
+    --shadow-panel: var(--asds-shadow-raised);
+    --focus-ring: 0 0 0 3px rgb(0 168 181 / 28%);
+  }
+}

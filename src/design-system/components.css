@@ -1,0 +1,121 @@
+@layer components {
+  .ds-button {
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    display: inline-flex;
+    font: 700 0.875rem/1 var(--font-sans);
+    gap: 8px;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 14px;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      color 160ms ease;
+    white-space: nowrap;
+  }
+
+  .ds-button svg {
+    flex: 0 0 auto;
+    height: 16px;
+    width: 16px;
+  }
+
+  .ds-button:focus-visible,
+  .icon-button:focus-visible,
+  .segment-button:focus-visible,
+  .nav-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .ds-button[data-variant="primary"] {
+    background: var(--color-action);
+    color: white;
+  }
+
+  .ds-button[data-variant="primary"]:hover {
+    background: var(--color-action-hover);
+  }
+
+  .ds-button[data-variant="secondary"] {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .ds-button[data-variant="secondary"]:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  .icon-button {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    width: 36px;
+  }
+
+  .icon-button:hover {
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+  }
+
+  .icon-button svg {
+    height: 17px;
+    width: 17px;
+  }
+
+  .status-chip {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-weight: 700;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0 10px;
+  }
+
+  .status-chip::before {
+    border-radius: 999px;
+    content: "";
+    height: 7px;
+    width: 7px;
+  }
+
+  .status-chip[data-tone="success"] {
+    background: rgb(54 179 126 / 14%);
+    color: #176846;
+  }
+
+  .status-chip[data-tone="success"]::before {
+    background: var(--color-success);
+  }
+
+  .status-chip[data-tone="warning"] {
+    background: rgb(240 160 43 / 16%);
+    color: #83550f;
+  }
+
+  .status-chip[data-tone="warning"]::before {
+    background: var(--color-warning);
+  }
+
+  .status-chip[data-tone="danger"] {
+    background: rgb(228 87 69 / 13%);
+    color: #a13a2e;
+  }
+
+  .status-chip[data-tone="danger"]::before {
+    background: var(--color-danger);
+  }
+}
