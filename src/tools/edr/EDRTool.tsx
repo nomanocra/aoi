@@ -164,7 +164,6 @@ function getGraphStyles(): StylesheetJson {
   const muted = cssVar('--safir-text-muted', '#d3d8de')
   const subtle = cssVar('--safir-text-subtle', '#8f99a8')
   const primary = cssVar('--safir-primary-strong', '#00e2be')
-  const primaryHover = cssVar('--safir-primary-hover', 'rgba(0,226,190,.1)')
   const black = cssVar('--aoi-black', '#000000')
 
   return [
@@ -267,13 +266,6 @@ function getGraphStyles(): StylesheetJson {
       selector: '.is-faded',
       style: {
         opacity: 0.24,
-      },
-    },
-    {
-      selector: '.is-collapsed',
-      style: {
-        'background-color': primaryHover,
-        'border-color': primary,
       },
     },
     {
@@ -982,22 +974,6 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     })
     cy.ready(syncFolderOverlays)
     cy.on('render pan zoom resize position style add remove data', syncFolderOverlays)
-
-    cy.on('tap', 'node[type = "domain"]', (event) => {
-      const domain = event.target
-      const children = domain.children()
-      const isCollapsed = domain.hasClass('is-collapsed')
-
-      if (isCollapsed) {
-        domain.removeClass('is-collapsed')
-        children.removeClass('is-faded')
-        children.connectedEdges().removeClass('is-faded')
-      } else {
-        domain.addClass('is-collapsed')
-        children.addClass('is-faded')
-        children.connectedEdges().addClass('is-faded')
-      }
-    })
 
     cy.on('tap', 'node[type != "domain"]', (event) => {
       const node = event.target
