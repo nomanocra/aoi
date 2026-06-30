@@ -165,6 +165,7 @@ function getGraphStyles(): StylesheetJson {
   const subtle = cssVar('--safir-text-subtle', '#8f99a8')
   const primary = cssVar('--safir-primary-strong', '#00e2be')
   const primaryHover = cssVar('--safir-primary-hover', 'rgba(0,226,190,.1)')
+  const black = cssVar('--aoi-black', '#000000')
 
   return [
     {
@@ -254,6 +255,12 @@ function getGraphStyles(): StylesheetJson {
         'border-color': primary,
         'line-color': primary,
         'target-arrow-color': primary,
+      },
+    },
+    {
+      selector: 'node:selected',
+      style: {
+        color: black,
       },
     },
     {
@@ -692,6 +699,7 @@ function EDREmptyState({ selectedCatalogue, onCatalogueSelect }: EDRHeaderAction
 
 type DomainFolderOverlay = {
   collapsed: boolean
+  faded: boolean
   height: number
   id: string
   itemCount: number
@@ -741,6 +749,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
       return {
         collapsed: isCollapsed,
+        faded: domain.hasClass('is-faded'),
         height: isCollapsed ? COLLAPSED_FOLDER_BODY_HEIGHT : box.h,
         id: domain.id(),
         itemCount: domain.descendants('node[type != "domain"]').length,
@@ -963,6 +972,9 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     })
     cyRef.current = cy
 
+    // Domains (groups) can be tapped to collapse but must not be selectable.
+    cy.nodes('[type = "domain"]').unselectify()
+
     runCollisionSafeLayout(cy, false, () => {
       collapseAllDomainFolders(cy)
       resolveContainerOverlaps(cy)
@@ -1051,7 +1063,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
         )}
         {folderOverlays.map((folder) => (
           <div
-            className={`edr-folder${folder.collapsed ? ' is-collapsed' : ''}`}
+            className={`edr-folder${folder.collapsed ? ' is-collapsed' : ''}${folder.faded ? ' is-faded' : ''}`}
             key={folder.id}
             style={{
               height: `${folder.collapsed ? FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT : folder.height + FOLDER_OVERLAY_OFFSET}px`,
