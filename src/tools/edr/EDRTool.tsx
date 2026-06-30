@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import cytoscape, { type Core, type ElementDefinition, type NodeSingular, type StylesheetJson } from 'cytoscape'
-import { ChevronDown, ChevronUp, Database, Eye, EyeOff, Search } from 'lucide-react'
+import cytoscape, { type Core, type EdgeSingular, type ElementDefinition, type NodeSingular, type StylesheetJson } from 'cytoscape'
+import { ChevronDown, ChevronUp, Database, Eye, EyeOff, Search, X } from 'lucide-react'
 import { AoiAppHeader } from '../../components/AoiAppHeader'
 import './EDRTool.css'
 
@@ -82,6 +82,33 @@ const graphElements: ElementDefinition[] = [
   { data: { id: 'mapping-weather', source: 'mapping_airport', target: 'weather', label: 'station_id' } },
   { data: { id: 'mapping-aircraft', source: 'mapping_airport', target: 'aircraft', label: 'aircraft_type' } },
 ]
+
+// Sample columns per node, surfaced in the selection detail panel.
+const NODE_COLUMNS: Record<string, string[]> = {
+  airport: ['airport_id', 'iata_code', 'icao_code', 'name', 'latitude', 'longitude', 'country_id'],
+  mapping_airport: ['mapping_id', 'airport_id', 'area_id', 'station_id', 'aircraft_type', 'updated_at'],
+  runway: ['runway_id', 'airport_id', 'length_m', 'width_m', 'surface', 'heading'],
+  airport_cycles: ['cycle_id', 'airport_id', 'cycle_date', 'arrivals', 'departures'],
+  mapping_airport_area: ['area_id', 'country_area_id', 'region_id', 'geom'],
+  countries_areas: ['country_area_id', 'iso2', 'landmass_id', 'name'],
+  landmass_areas: ['landmass_id', 'name', 'continent'],
+  countries_geojson: ['iso2', 'geometry', 'properties'],
+  oag_regions: ['region_id', 'name', 'parent_region_id'],
+  flight_network: ['flight_id', 'origin_airport_id', 'carrier_id', 'departure_ts', 'arrival_ts'],
+  carrier: ['carrier_id', 'iata', 'icao', 'name', 'country'],
+  aircraft: ['aircraft_type', 'manufacturer', 'model', 'seats'],
+  weather: ['station_id', 'observed_at', 'temp_c', 'wind_kt', 'visibility_m'],
+}
+
+type SelectedRelation = { key: string; target: string; direction: 'in' | 'out' }
+type SelectedNodeInfo = {
+  id: string
+  label: string
+  type: string
+  group: string | null
+  columns: string[]
+  relations: SelectedRelation[]
+}
 
 const COLLAPSED_FOLDER_FALLBACK_WIDTH = 352
 const COLLAPSED_FOLDER_BODY_HEIGHT = 29
@@ -715,6 +742,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   const [folderOverlays, setFolderOverlays] = useState<DomainFolderOverlay[]>([])
   const [metaLinks, setMetaLinks] = useState<MetaLink[]>([])
   const [hiddenDomains, setHiddenDomains] = useState<{ id: string; label: string }[]>([])
+  const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null)
 
   const syncFolderOverlays = useCallback(() => {
     const cy = cyRef.current
@@ -902,6 +930,15 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     hiddenDomains.forEach((item) => showFolder(item.id))
   }, [hiddenDomains, showFolder])
 
+  const clearSelection = useCallback(() => {
+    const cy = cyRef.current
+    if (cy) {
+      cy.elements().removeClass('is-faded')
+      cy.elements().unselect()
+    }
+    setSelectedNode(null)
+  }, [])
+
   const moveFolderBy = useCallback((domainId: string, renderedDx: number, renderedDy: number) => {
     const cy = cyRef.current
     const domain = cy?.getElementById(domainId)
@@ -1016,10 +1053,31 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
       node.connectedEdges().removeClass('is-faded')
       node.connectedEdges().connectedNodes().removeClass('is-faded')
       node.ancestors().removeClass('is-faded')
+
+      const relations: SelectedRelation[] = node.connectedEdges().map((edge: EdgeSingular) => {
+        const isSource = edge.source().id() === node.id()
+        const other = isSource ? edge.target() : edge.source()
+        return {
+          key: String(edge.data('label')),
+          target: String(other.data('label')),
+          direction: isSource ? 'out' : 'in',
+        }
+      })
+      setSelectedNode({
+        id: node.id(),
+        label: String(node.data('label')),
+        type: String(node.data('type')),
+        group: node.parent().nonempty() ? String(node.parent().data('label')) : null,
+        columns: NODE_COLUMNS[node.id()] ?? [],
+        relations,
+      })
     })
 
     cy.on('tap', (event) => {
-      if (event.target === cy) cy.elements().removeClass('is-faded')
+      if (event.target === cy) {
+        cy.elements().removeClass('is-faded')
+        setSelectedNode(null)
+      }
     })
 
     cy.on('dragfree', 'node[type != "domain"]', (event) => {
@@ -1037,6 +1095,45 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   return (
     <div className="edr-catalog-graph" aria-label={`${catalogue} catalog graph`}>
       <div className="edr-catalog-graph__canvas" ref={graphRef} />
+      {selectedNode && (
+        <aside className="edr-detail" aria-label={`${selectedNode.label} details`}>
+          <header className="edr-detail__head">
+            <div>
+              <span className="edr-detail__type">{selectedNode.type}</span>
+              <h2>{selectedNode.label}</h2>
+            </div>
+            <button aria-label="Close details" onClick={clearSelection} type="button">
+              <X size={16} strokeWidth={2} />
+            </button>
+          </header>
+          {selectedNode.group && (
+            <div className="edr-detail__row">
+              <span className="edr-detail__label">Group</span>
+              <span className="edr-detail__value">{selectedNode.group}</span>
+            </div>
+          )}
+          <div className="edr-detail__section">
+            <span className="edr-detail__label">Columns ({selectedNode.columns.length})</span>
+            <ul className="edr-detail__columns">
+              {selectedNode.columns.map((column) => (
+                <li key={column}>{column}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="edr-detail__section">
+            <span className="edr-detail__label">Relations ({selectedNode.relations.length})</span>
+            <ul className="edr-detail__relations">
+              {selectedNode.relations.map((relation, index) => (
+                <li key={`${relation.target}-${relation.key}-${index}`}>
+                  <span className="edr-detail__rel-dir">{relation.direction === 'out' ? '→' : '←'}</span>
+                  <span className="edr-detail__rel-target">{relation.target}</span>
+                  <span className="edr-detail__rel-key">{relation.key}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      )}
       {hiddenDomains.length > 0 && (
         <div className="edr-hidden-tray" aria-label="Hidden groups">
           <div className="edr-hidden-tray__head">
