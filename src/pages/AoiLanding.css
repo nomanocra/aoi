@@ -1,0 +1,213 @@
+.aoi-landing {
+  background: var(--safir-bg);
+  color: var(--safir-text);
+  font-family: var(--safir-font);
+  min-height: 100svh;
+}
+
+.aoi-landing__hero {
+  align-items: center;
+  background: var(--safir-header);
+  border-bottom: 1px solid var(--safir-border);
+  display: flex;
+  height: 48px;
+  justify-content: space-between;
+  padding: 8px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.aoi-landing__brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.aoi-landing__logo {
+  display: block;
+  height: 26px;
+  object-fit: contain;
+  width: 26px;
+}
+
+.aoi-landing__brand strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.aoi-landing__brand span {
+  color: var(--safir-text-subtle);
+  font-size: 12px;
+}
+
+.aoi-landing__hero-badge {
+  align-items: center;
+  color: var(--safir-text-muted);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.aoi-landing__back {
+  align-items: center;
+  background: var(--safir-control);
+  border: 1px solid var(--safir-border-strong);
+  border-radius: var(--radius-control);
+  color: var(--safir-text);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.aoi-landing__back:hover {
+  background: var(--safir-control-strong);
+  border-color: var(--safir-primary-strong);
+}
+
+.aoi-landing__body {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 40px 24px 64px;
+}
+
+.aoi-landing__intro {
+  margin-bottom: 36px;
+}
+
+.aoi-landing__intro h1 {
+  font-size: 30px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.aoi-landing__intro p {
+  color: var(--safir-text-muted);
+  font-size: 15px;
+  margin: 0;
+  max-width: 60ch;
+}
+
+.aoi-landing__family {
+  border-top: 1px solid var(--safir-border);
+  padding-top: 28px;
+}
+
+.aoi-landing__family + .aoi-landing__family {
+  margin-top: 40px;
+}
+
+.aoi-landing__family-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-bottom: 20px;
+}
+
+.aoi-landing__family-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.aoi-landing__family-name h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.aoi-landing__family-name:hover h2 {
+  color: var(--safir-primary-strong);
+}
+
+.aoi-landing__family-tagline {
+  color: var(--safir-primary-strong);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.aoi-landing__family-desc {
+  color: var(--safir-text-subtle);
+  font-size: 14px;
+  margin: 0;
+  max-width: 48ch;
+}
+
+.aoi-landing__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.aoi-landing__card {
+  background: var(--safir-panel);
+  border: 1px solid var(--safir-border);
+  border-radius: var(--radius-panel);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 168px;
+  padding: 20px;
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.aoi-landing__card:hover {
+  border-color: var(--safir-primary-strong);
+  box-shadow: 0 14px 32px rgb(0 0 0 / 28%);
+  transform: translateY(-2px);
+}
+
+.aoi-landing__card-family {
+  color: var(--safir-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aoi-landing__card-head h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 4px 0 0;
+}
+
+.aoi-landing__card p {
+  color: var(--safir-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.aoi-landing__card-cta {
+  align-items: center;
+  color: var(--safir-primary-strong);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.aoi-landing__card:hover .aoi-landing__card-cta {
+  gap: 9px;
+}
+
+.aoi-landing__empty {
+  color: var(--safir-text-subtle);
+  font-size: 14px;
+  margin: 0;
+}

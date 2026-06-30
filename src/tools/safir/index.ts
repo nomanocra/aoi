@@ -3,9 +3,9 @@ import type { AoiTool } from '../types'
 
 export const safirTool: AoiTool = {
   id: 'safir',
+  path: 'safir',
   name: 'SAFIR',
-  productLine: 'Airline Operations Intelligence',
+  family: 'SAFIR',
   description: 'SAF consumption monitoring and distribution analytics.',
-  route: '#safir',
   Component: SafirTool,
 }

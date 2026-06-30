@@ -23,6 +23,17 @@
   gap: 12px;
 }
 
+.aoi-app-header__home {
+  align-items: center;
+  border-radius: var(--radius-control);
+  display: inline-flex;
+  line-height: 0;
+}
+
+.aoi-app-header__home:hover {
+  opacity: 0.8;
+}
+
 .aoi-app-header__logo {
   display: block;
   height: 24px;

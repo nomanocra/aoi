@@ -81,30 +81,73 @@ const graphElements: ElementDefinition[] = [
   { data: { id: 'network-carrier', source: 'flight_network', target: 'carrier', label: 'carrier_id' } },
   { data: { id: 'mapping-weather', source: 'mapping_airport', target: 'weather', label: 'station_id' } },
   { data: { id: 'mapping-aircraft', source: 'mapping_airport', target: 'aircraft', label: 'aircraft_type' } },
-  {
-    data: {
-      id: 'folder-link-network-airports',
-      label: 'origin_airport_id',
-      source: 'network',
-      target: 'airports',
-      type: 'folder-link',
-    },
-  },
-  {
-    data: {
-      id: 'folder-link-airports-regions',
-      label: 'area_id',
-      source: 'airports',
-      target: 'regions',
-      type: 'folder-link',
-    },
-  },
 ]
 
 const COLLAPSED_FOLDER_FALLBACK_WIDTH = 352
 const COLLAPSED_FOLDER_BODY_HEIGHT = 29
 const FOLDER_HEADER_HEIGHT = 24
 const FOLDER_HEADER_GAP = 4
+const FOLDER_OVERLAY_OFFSET = 28
+const CONTAINER_OVERLAP_GAP = 28
+
+type ElementData = {
+  id?: string
+  source?: string
+  target?: string
+  parent?: string
+  type?: string
+  label?: string
+}
+
+const nodeMetaById = new Map<string, { parent?: string; type?: string }>()
+graphElements.forEach((element) => {
+  const data = element.data as ElementData
+  if (data?.id && !data.source) {
+    nodeMetaById.set(data.id, { parent: data.parent, type: data.type })
+  }
+})
+
+/** Returns the top-level container of a node: its parent domain, or itself for top-level nodes. */
+function containerIdOf(nodeId: string): string {
+  return nodeMetaById.get(nodeId)?.parent ?? nodeId
+}
+
+type MetaEdge = {
+  sourceNode: string
+  targetNode: string
+  sourceContainer: string
+  targetContainer: string
+  label?: string
+}
+
+/**
+ * Cross-container relationships derived from the table edges: any edge whose endpoints live in
+ * two different containers (two domains, or a domain and an external entity). They are drawn as
+ * aggregated links so relationships survive when a group is collapsed. Each keeps its underlying
+ * node endpoints so an open group can anchor the link on the exact item it concerns.
+ */
+const metaEdges: MetaEdge[] = (() => {
+  const result: MetaEdge[] = []
+
+  graphElements.forEach((element) => {
+    const data = element.data as ElementData
+    if (!data?.source || !data.target) return
+
+    const sourceContainer = containerIdOf(data.source)
+    const targetContainer = containerIdOf(data.target)
+    if (sourceContainer === targetContainer) return
+
+    result.push({
+      sourceNode: data.source,
+      targetNode: data.target,
+      sourceContainer,
+      targetContainer,
+      label: data.label,
+    })
+  })
+
+  return result
+})()
 
 function cssVar(name: string, fallback: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
@@ -202,19 +245,6 @@ function getGraphStyles(): StylesheetJson {
         'text-background-padding': '2px',
         'text-rotation': 'autorotate',
         width: 1,
-      },
-    },
-    {
-      selector: 'edge[type = "folder-link"]',
-      style: {
-        display: 'none',
-        'font-size': 8,
-        'line-color': border,
-        'line-opacity': 0.84,
-        'line-style': 'dashed',
-        'target-arrow-color': border,
-        'target-arrow-shape': 'triangle',
-        width: 1.25,
       },
     },
     {
@@ -317,18 +347,13 @@ function collapseAllDomainFolders(cy: Core) {
       descendants.style('display', 'none')
       relatedEdges.style('display', 'none')
     })
-
-    updateFolderLinkVisibility(cy)
+    syncRelationshipVisibility(cy)
   })
 }
 
-function updateFolderLinkVisibility(cy: Core) {
-  cy.edges('[type = "folder-link"]').forEach((edge) => {
-    const source = edge.source()
-    const target = edge.target()
-    const sourceCollapsed = source.hasClass('is-folder-collapsed')
-    const targetCollapsed = target.hasClass('is-folder-collapsed')
-    const shouldShow = source.visible() && target.visible() && (sourceCollapsed || targetCollapsed)
+function syncRelationshipVisibility(cy: Core) {
+  cy.edges().forEach((edge) => {
+    const shouldShow = edge.source().visible() && edge.target().visible()
 
     edge.style('display', shouldShow ? 'element' : 'none')
   })
@@ -402,6 +427,141 @@ function resolveLocalOverlap(node: NodeSingular) {
 
     if (!moved) return
   }
+}
+
+/** Rendered-space box (in px, relative to the graph canvas) of a domain's folder, header included. */
+function getDomainFolderRenderedBox(cy: Core, domain: NodeSingular): GraphBox {
+  const zoom = cy.zoom()
+  const pan = cy.pan()
+  const box = domain.renderedBoundingBox({
+    includeEdges: false,
+    includeLabels: false,
+    includeNodes: true,
+    includeOverlays: false,
+    includeUnderlays: false,
+  })
+
+  if (domain.hasClass('is-folder-collapsed')) {
+    const collapsedModelWidth = Number(domain.data('collapsedModelWidth'))
+    const collapsedModelX = Number(domain.data('collapsedModelX'))
+    const collapsedModelY = Number(domain.data('collapsedModelY'))
+    const width = Number.isFinite(collapsedModelWidth) ? collapsedModelWidth * zoom : COLLAPSED_FOLDER_FALLBACK_WIDTH
+    const x = Number.isFinite(collapsedModelX) ? collapsedModelX * zoom + pan.x : box.x1
+    const y = Number.isFinite(collapsedModelY) ? collapsedModelY * zoom + pan.y : box.y1
+    const top = y - FOLDER_OVERLAY_OFFSET
+    const height = FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT
+    return { x1: x, x2: x + width, y1: top, y2: top + height }
+  }
+
+  return { x1: box.x1, x2: box.x2, y1: box.y1 - FOLDER_OVERLAY_OFFSET, y2: box.y2 }
+}
+
+function getEntityRenderedBox(node: NodeSingular): GraphBox {
+  const box = node.renderedBoundingBox({
+    includeEdges: false,
+    includeLabels: true,
+    includeNodes: true,
+    includeOverlays: false,
+    includeUnderlays: false,
+  })
+
+  return { x1: box.x1, x2: box.x2, y1: box.y1, y2: box.y2 }
+}
+
+function getContainerRenderedBox(cy: Core, node: NodeSingular): GraphBox {
+  return node.data('type') === 'domain' ? getDomainFolderRenderedBox(cy, node) : getEntityRenderedBox(node)
+}
+
+/** Moves a whole container (a domain and its descendants, or a single external node) in model space. */
+function shiftContainer(cy: Core, node: NodeSingular, modelDx: number, modelDy: number) {
+  if (node.data('type') === 'domain') {
+    cy.batch(() => {
+      node.descendants('node').forEach((descendant) => {
+        const position = descendant.position()
+        descendant.position({ x: position.x + modelDx, y: position.y + modelDy })
+      })
+
+      if (node.hasClass('is-folder-collapsed')) {
+        const collapsedModelX = Number(node.data('collapsedModelX'))
+        const collapsedModelY = Number(node.data('collapsedModelY'))
+        if (Number.isFinite(collapsedModelX) && Number.isFinite(collapsedModelY)) {
+          node.data({ collapsedModelX: collapsedModelX + modelDx, collapsedModelY: collapsedModelY + modelDy })
+        }
+      }
+    })
+    return
+  }
+
+  const position = node.position()
+  node.position({ x: position.x + modelDx, y: position.y + modelDy })
+}
+
+/** Iteratively pushes overlapping top-level containers (domains and external entities) apart. */
+function resolveContainerOverlaps(cy: Core) {
+  const zoom = cy.zoom()
+  const containers = cy.nodes().filter((node: NodeSingular) => node.parent().empty() && node.visible())
+  if (containers.length < 2) return
+
+  const maxPasses = 16
+
+  for (let pass = 0; pass < maxPasses; pass += 1) {
+    let moved = false
+    const items = containers.map((node: NodeSingular) => ({ node, box: getContainerRenderedBox(cy, node) }))
+
+    for (let i = 0; i < items.length; i += 1) {
+      for (let j = i + 1; j < items.length; j += 1) {
+        const a = items[i]
+        const b = items[j]
+        const overlapX = Math.min(a.box.x2, b.box.x2) - Math.max(a.box.x1, b.box.x1)
+        const overlapY = Math.min(a.box.y2, b.box.y2) - Math.max(a.box.y1, b.box.y1)
+        if (overlapX <= 0 || overlapY <= 0) continue
+
+        const aCenterX = (a.box.x1 + a.box.x2) / 2
+        const aCenterY = (a.box.y1 + a.box.y2) / 2
+        const bCenterX = (b.box.x1 + b.box.x2) / 2
+        const bCenterY = (b.box.y1 + b.box.y2) / 2
+
+        if (overlapX < overlapY) {
+          const push = (overlapX + CONTAINER_OVERLAP_GAP) / 2 / zoom
+          const direction = aCenterX <= bCenterX ? -1 : 1
+          shiftContainer(cy, a.node, direction * push, 0)
+          shiftContainer(cy, b.node, -direction * push, 0)
+        } else {
+          const push = (overlapY + CONTAINER_OVERLAP_GAP) / 2 / zoom
+          const direction = aCenterY <= bCenterY ? -1 : 1
+          shiftContainer(cy, a.node, 0, direction * push)
+          shiftContainer(cy, b.node, 0, -direction * push)
+        }
+
+        a.box = getContainerRenderedBox(cy, a.node)
+        b.box = getContainerRenderedBox(cy, b.node)
+        moved = true
+      }
+    }
+
+    if (!moved) break
+  }
+}
+
+type MetaLink = {
+  id: string
+  label?: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
+/** Point where the segment from the box centre toward (towardX, towardY) crosses the box border. */
+function borderPoint(box: GraphBox, towardX: number, towardY: number) {
+  const centerX = (box.x1 + box.x2) / 2
+  const centerY = (box.y1 + box.y2) / 2
+  const dx = towardX - centerX
+  const dy = towardY - centerY
+  const halfWidth = (box.x2 - box.x1) / 2 || 1
+  const halfHeight = (box.y2 - box.y1) / 2 || 1
+  const scale = 1 / Math.max(Math.abs(dx) / halfWidth, Math.abs(dy) / halfHeight, 1e-6)
+  return { x: centerX + dx * scale, y: centerY + dy * scale }
 }
 
 type EDRHeaderActionsProps = {
@@ -534,6 +694,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   const cyRef = useRef<Core | null>(null)
   const folderDragRef = useRef<FolderDragState | null>(null)
   const [folderOverlays, setFolderOverlays] = useState<DomainFolderOverlay[]>([])
+  const [metaLinks, setMetaLinks] = useState<MetaLink[]>([])
 
   const syncFolderOverlays = useCallback(() => {
     const cy = cyRef.current
@@ -572,6 +733,71 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     })
 
     setFolderOverlays(overlays)
+
+    // Cross-container links: keep relationships visible when a container is collapsed. A collapsed
+    // group anchors on its rectangle; an open group anchors on the exact item the edge concerns.
+    const folderBoxIndex: Record<string, { box: GraphBox; collapsed: boolean }> = {}
+    overlays.forEach((folder) => {
+      // The rectangle body only (the panel / "N Items" bar), excluding the header above it.
+      const height = folder.collapsed ? COLLAPSED_FOLDER_BODY_HEIGHT : folder.height
+      folderBoxIndex[folder.id] = {
+        collapsed: folder.collapsed,
+        box: { x1: folder.x, x2: folder.x + folder.width, y1: folder.y, y2: folder.y + height },
+      }
+    })
+
+    const nodeBoxIndex: Record<string, GraphBox> = {}
+    cy.nodes('[type != "domain"]:visible').forEach((node) => {
+      nodeBoxIndex[node.id()] = getEntityRenderedBox(node)
+    })
+
+    const resolveAnchor = (nodeId: string, containerId: string) => {
+      const folder = folderBoxIndex[containerId]
+      // Open group -> anchor on the concerned item; collapsed group -> anchor on its rectangle.
+      if (folder && !folder.collapsed && nodeBoxIndex[nodeId]) return { box: nodeBoxIndex[nodeId], key: nodeId }
+      if (folder) return { box: folder.box, key: containerId }
+      if (nodeBoxIndex[nodeId]) return { box: nodeBoxIndex[nodeId], key: nodeId }
+      return null
+    }
+
+    const grouped = new Map<string, { source: GraphBox; target: GraphBox; labels: string[] }>()
+    metaEdges.forEach((edge) => {
+      const sourceCollapsed = folderBoxIndex[edge.sourceContainer]?.collapsed ?? false
+      const targetCollapsed = folderBoxIndex[edge.targetContainer]?.collapsed ?? false
+      // Only show when at least one side is collapsed; otherwise real table edges carry it.
+      if (!sourceCollapsed && !targetCollapsed) return
+
+      const source = resolveAnchor(edge.sourceNode, edge.sourceContainer)
+      const target = resolveAnchor(edge.targetNode, edge.targetContainer)
+      if (!source || !target) return
+
+      // Collapse duplicate lines that resolve to the same pair of anchors (e.g. both collapsed).
+      const key = `${source.key}::${target.key}`
+      const existing = grouped.get(key)
+      if (existing) {
+        if (edge.label) existing.labels.push(edge.label)
+        return
+      }
+      grouped.set(key, { source: source.box, target: target.box, labels: edge.label ? [edge.label] : [] })
+    })
+
+    const links: MetaLink[] = []
+    grouped.forEach((value, key) => {
+      const sourceCenter = { x: (value.source.x1 + value.source.x2) / 2, y: (value.source.y1 + value.source.y2) / 2 }
+      const targetCenter = { x: (value.target.x1 + value.target.x2) / 2, y: (value.target.y1 + value.target.y2) / 2 }
+      const start = borderPoint(value.source, targetCenter.x, targetCenter.y)
+      const end = borderPoint(value.target, sourceCenter.x, sourceCenter.y)
+      links.push({
+        id: key,
+        label: value.labels.length === 1 ? value.labels[0] : undefined,
+        x1: start.x,
+        y1: start.y,
+        x2: end.x,
+        y2: end.y,
+      })
+    })
+
+    setMetaLinks(links)
   }, [])
 
   const toggleFolder = useCallback((domainId: string) => {
@@ -607,7 +833,8 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
       relatedEdges.style('display', 'none')
     }
 
-    updateFolderLinkVisibility(cy)
+    syncRelationshipVisibility(cy)
+    resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -622,7 +849,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     relatedEdges.style('display', 'none')
     descendants.style('display', 'none')
     domain.style('display', 'none')
-    updateFolderLinkVisibility(cy)
+    syncRelationshipVisibility(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -698,6 +925,8 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     folderDragRef.current = null
     event.currentTarget.releasePointerCapture(event.pointerId)
+    const cy = cyRef.current
+    if (cy) resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -717,6 +946,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     runCollisionSafeLayout(cy, false, () => {
       collapseAllDomainFolders(cy)
+      resolveContainerOverlaps(cy)
       syncFolderOverlays()
     })
     cy.ready(syncFolderOverlays)
@@ -753,6 +983,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     cy.on('dragfree', 'node[type != "domain"]', (event) => {
       resolveLocalOverlap(event.target)
+      resolveContainerOverlaps(cy)
       syncFolderOverlays()
     })
 
@@ -766,13 +997,46 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     <div className="edr-catalog-graph" aria-label={`${catalogue} catalog graph`}>
       <div className="edr-catalog-graph__canvas" ref={graphRef} />
       <div className="edr-folder-layer" aria-hidden="false">
+        {metaLinks.length > 0 && (
+          <svg className="edr-meta-links" aria-hidden="true">
+            <defs>
+              <marker
+                id="edr-meta-arrow"
+                markerWidth="9"
+                markerHeight="9"
+                refX="7.5"
+                refY="4.5"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path d="M0 0 L9 4.5 L0 9 z" />
+              </marker>
+            </defs>
+            {metaLinks.map((link) => (
+              <g key={link.id}>
+                <line
+                  x1={link.x1}
+                  y1={link.y1}
+                  x2={link.x2}
+                  y2={link.y2}
+                  markerEnd="url(#edr-meta-arrow)"
+                />
+                {link.label && (
+                  <text x={(link.x1 + link.x2) / 2} y={(link.y1 + link.y2) / 2}>
+                    {link.label}
+                  </text>
+                )}
+              </g>
+            ))}
+          </svg>
+        )}
         {folderOverlays.map((folder) => (
           <div
             className={`edr-folder${folder.collapsed ? ' is-collapsed' : ''}`}
             key={folder.id}
             style={{
-              height: `${folder.collapsed ? FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT : folder.height + 28}px`,
-              transform: `translate(${folder.x}px, ${folder.y - 28}px)`,
+              height: `${folder.collapsed ? FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT : folder.height + FOLDER_OVERLAY_OFFSET}px`,
+              transform: `translate(${folder.x}px, ${folder.y - FOLDER_OVERLAY_OFFSET}px)`,
               width: `${folder.width}px`,
             }}
           >

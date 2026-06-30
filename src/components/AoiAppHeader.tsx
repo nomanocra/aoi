@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { homePath } from '../tools'
+import { linkProps } from '../navigation'
 import './AoiAppHeader.css'
 
 type AoiAppHeaderProps = {
@@ -11,7 +13,9 @@ export function AoiAppHeader({ appName, subtitle, actions }: AoiAppHeaderProps) 
   return (
     <header className="aoi-app-header">
       <div className="aoi-app-header__brand">
-        <img className="aoi-app-header__logo" src="/assets/aoi-logo.svg" alt="" aria-hidden="true" />
+        <a className="aoi-app-header__home" {...linkProps(homePath())} aria-label="Back to AOI home">
+          <img className="aoi-app-header__logo" src="/assets/aoi-logo.svg" alt="" aria-hidden="true" />
+        </a>
         <strong>{appName}</strong>
         {subtitle && <em>{subtitle}</em>}
       </div>

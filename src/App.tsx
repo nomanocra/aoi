@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react'
-import { resolveAoiTool } from './tools'
+import { resolveAoiRoute } from './tools'
+import AoiLanding from './pages/AoiLanding'
 
-function getCurrentHash() {
-  return window.location.hash
+function getCurrentPath() {
+  return window.location.pathname
 }
 
 function App() {
-  const [hash, setHash] = useState(getCurrentHash)
-  const activeTool = resolveAoiTool(hash)
-  const ActiveTool = activeTool.Component
+  const [path, setPath] = useState(getCurrentPath)
+  const route = resolveAoiRoute(path)
 
   useEffect(() => {
-    const handleHashChange = () => setHash(getCurrentHash())
+    const handlePopState = () => setPath(getCurrentPath())
 
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  return <ActiveTool />
+  if (route.type === 'tool') {
+    const ActiveTool = route.tool.Component
+    return <ActiveTool />
+  }
+
+  return <AoiLanding />
 }
 
 export default App

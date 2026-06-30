@@ -69,6 +69,38 @@
   z-index: 2;
 }
 
+.edr-meta-links {
+  height: 100%;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+}
+
+.edr-meta-links line {
+  stroke: var(--aoi-gray-1);
+  stroke-dasharray: 5 4;
+  stroke-width: 1.5;
+}
+
+.edr-meta-links marker path {
+  fill: var(--aoi-gray-1);
+}
+
+.edr-meta-links text {
+  fill: var(--safir-text-subtle);
+  font-family: var(--safir-font);
+  font-size: 9px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--safir-bg);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
 .edr-folder {
   display: flex;
   flex-direction: column;
@@ -86,6 +118,7 @@
   height: 24px;
   justify-content: space-between;
   pointer-events: auto;
+  user-select: none;
   width: 100%;
 }
 
@@ -143,6 +176,7 @@
   line-height: 1;
   min-height: 0;
   pointer-events: none;
+  user-select: none;
   width: 100%;
 }
 
