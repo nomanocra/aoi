@@ -113,11 +113,11 @@ type SelectedNodeInfo = {
 // Collapsed groups use a fixed compact width (model units) instead of keeping
 // their full expanded width, so a folded folder is just wide enough for its
 // header (label + icons) / "N Items" row.
-const COLLAPSED_FOLDER_WIDTH = 232
-const COLLAPSED_FOLDER_FALLBACK_WIDTH = 232
-const COLLAPSED_FOLDER_BODY_HEIGHT = 29
+const COLLAPSED_FOLDER_WIDTH = 150
+const COLLAPSED_FOLDER_FALLBACK_WIDTH = 150
+const COLLAPSED_FOLDER_BODY_HEIGHT = 22
 const FOLDER_HEADER_HEIGHT = 24
-const FOLDER_HEADER_GAP = 4
+const FOLDER_HEADER_GAP = 2
 const FOLDER_OVERLAY_OFFSET = 28
 const CONTAINER_OVERLAP_GAP = 28
 
@@ -212,6 +212,7 @@ function getGraphStyles(): StylesheetJson {
         'overlay-opacity': 0,
         shape: 'round-rectangle',
         'text-halign': 'center',
+        'text-margin-y': -12,
         'text-valign': 'center',
         width: 104,
       },
