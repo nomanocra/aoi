@@ -76,13 +76,7 @@ export function AoiLanding() {
     <div className="aoi-home">
       <header className="aoi-home__header">
         <a className="aoi-home__brand" {...linkProps('/')} aria-label="AOI home">
-          <img className="aoi-home__logo" src="/assets/aoi-logo.svg" alt="" aria-hidden="true" />
-          <span className="aoi-home__brand-text">
-            <b>Airline</b>
-            <b>Operations</b>
-            <b>Intelligence</b>
-            <em>by Airbus Sciences</em>
-          </span>
+          <img className="aoi-home__lockup" src="/assets/aoi-lockup.svg" alt="Airline Operations Intelligence" />
         </a>
 
         <div className="aoi-home__titleblock">

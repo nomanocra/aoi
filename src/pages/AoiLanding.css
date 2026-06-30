@@ -34,34 +34,10 @@
   color: inherit;
 }
 
-.aoi-home__logo {
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-}
-
-.aoi-home__brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-}
-
-.aoi-home__brand-text b {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.aoi-home__brand-text b::first-letter {
-  color: var(--home-teal);
-}
-
-.aoi-home__brand-text em {
-  margin-top: 4px;
-  color: var(--home-dim);
-  font-size: 9px;
-  font-style: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.aoi-home__lockup {
+  height: 64px;
+  width: auto;
+  display: block;
 }
 
 .aoi-home__titleblock {
