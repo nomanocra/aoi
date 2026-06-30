@@ -16,62 +16,82 @@ const catalogueNames = [
   'countries_areas',
 ]
 
+// The catalog is a recursive tree of groups: a "domain" node may be parented to
+// another domain, nesting arbitrarily deep. Tables (and the deeper groups they
+// belong to) live inside these groups. The hierarchy below goes up to three
+// levels deep, e.g. airports > facilities > terminals.
 const graphElements: ElementDefinition[] = [
+  // ── Groups (nested via `parent`) ─────────────────────────────────────────
   { data: { id: 'airports', label: 'airports', type: 'domain' } },
+  { data: { id: 'facilities', label: 'facilities', type: 'domain', parent: 'airports' } },
+  { data: { id: 'terminals', label: 'terminals', type: 'domain', parent: 'facilities' } },
   { data: { id: 'regions', label: 'regions', type: 'domain' } },
+  { data: { id: 'geography', label: 'geography', type: 'domain', parent: 'regions' } },
   { data: { id: 'network', label: 'network', type: 'domain' } },
-  { data: { id: 'airport', label: 'airport', type: 'table', parent: 'airports' }, position: { x: 180, y: 210 } },
+  { data: { id: 'fleet', label: 'fleet', type: 'domain', parent: 'network' } },
+
+  // ── airports ─────────────────────────────────────────────────────────────
+  { data: { id: 'airport', label: 'airport', type: 'table', parent: 'airports' }, position: { x: 180, y: 150 } },
   {
     data: { id: 'mapping_airport', label: 'mapping_airport', type: 'table', parent: 'airports', primary: true },
-    position: { x: 338, y: 178 },
+    position: { x: 330, y: 130 },
   },
+  // airports › facilities
+  { data: { id: 'runway', label: 'runway', type: 'table', parent: 'facilities' }, position: { x: 170, y: 330 } },
   {
-    data: { id: 'runway', label: 'runway', type: 'table', parent: 'airports' },
-    position: { x: 246, y: 286 },
+    data: { id: 'airport_cycles', label: 'airport_cycles', type: 'table', parent: 'facilities' },
+    position: { x: 320, y: 330 },
   },
-  {
-    data: { id: 'airport_cycles', label: 'airport_cycles', type: 'table', parent: 'airports' },
-    position: { x: 170, y: 132 },
-  },
+  // airports › facilities › terminals
+  { data: { id: 'terminal', label: 'terminal', type: 'table', parent: 'terminals' }, position: { x: 200, y: 480 } },
+  { data: { id: 'gate', label: 'gate', type: 'table', parent: 'terminals' }, position: { x: 330, y: 480 } },
+
+  // ── regions ──────────────────────────────────────────────────────────────
   {
     data: { id: 'mapping_airport_area', label: 'mapping_airport_area', type: 'table', parent: 'regions', primary: true },
-    position: { x: 610, y: 166 },
+    position: { x: 660, y: 150 },
   },
   {
     data: { id: 'countries_areas', label: 'countries_areas', type: 'table', parent: 'regions' },
-    position: { x: 548, y: 252 },
+    position: { x: 660, y: 250 },
+  },
+  // regions › geography
+  {
+    data: { id: 'countries_geojson', label: 'countries_geojson', type: 'table', parent: 'geography' },
+    position: { x: 600, y: 410 },
   },
   {
-    data: { id: 'landmass_areas', label: 'landmass_areas', type: 'table', parent: 'regions' },
-    position: { x: 724, y: 238 },
+    data: { id: 'landmass_areas', label: 'landmass_areas', type: 'table', parent: 'geography' },
+    position: { x: 760, y: 410 },
   },
   {
-    data: { id: 'countries_geojson', label: 'countries_geojson', type: 'table', parent: 'regions' },
-    position: { x: 612, y: 322 },
+    data: { id: 'oag_regions', label: 'oag_regions', type: 'table', parent: 'geography' },
+    position: { x: 680, y: 490 },
   },
-  {
-    data: { id: 'oag_regions', label: 'oag_regions', type: 'table', parent: 'regions' },
-    position: { x: 760, y: 314 },
-  },
+
+  // ── network ──────────────────────────────────────────────────────────────
   {
     data: { id: 'flight_network', label: 'flight_network', type: 'table', parent: 'network' },
-    position: { x: 404, y: 314 },
+    position: { x: 450, y: 300 },
   },
+  { data: { id: 'carrier', label: 'carrier', type: 'table', parent: 'network' }, position: { x: 450, y: 380 } },
+  // network › fleet
   {
-    data: { id: 'carrier', label: 'carrier', type: 'table', parent: 'network' },
-    position: { x: 404, y: 402 },
+    data: { id: 'aircraft_model', label: 'aircraft_model', type: 'table', parent: 'fleet' },
+    position: { x: 450, y: 520 },
   },
-  {
-    data: { id: 'aircraft', label: 'aircraft', type: 'external' },
-    position: { x: 468, y: 78 },
-  },
-  {
-    data: { id: 'weather', label: 'weather', type: 'external' },
-    position: { x: 336, y: 78 },
-  },
+  { data: { id: 'seat_map', label: 'seat_map', type: 'table', parent: 'fleet' }, position: { x: 450, y: 600 } },
+
+  // ── external entities ────────────────────────────────────────────────────
+  { data: { id: 'aircraft', label: 'aircraft', type: 'external' }, position: { x: 468, y: 60 } },
+  { data: { id: 'weather', label: 'weather', type: 'external' }, position: { x: 336, y: 60 } },
+
+  // ── relationships ────────────────────────────────────────────────────────
   { data: { id: 'airport-mapping_airport', source: 'airport', target: 'mapping_airport', label: 'airport_id' } },
   { data: { id: 'runway-airport', source: 'runway', target: 'airport', label: 'airport_id' } },
   { data: { id: 'airport_cycles-airport', source: 'airport_cycles', target: 'airport', label: 'cycle_id' } },
+  { data: { id: 'terminal-airport', source: 'terminal', target: 'airport', label: 'airport_id' } },
+  { data: { id: 'gate-terminal', source: 'gate', target: 'terminal', label: 'terminal_id' } },
   { data: { id: 'mapping_airport-area', source: 'mapping_airport', target: 'mapping_airport_area', label: 'area_id' } },
   { data: { id: 'countries_areas-area', source: 'countries_areas', target: 'mapping_airport_area', label: 'country_area_id' } },
   { data: { id: 'landmass_areas-countries', source: 'landmass_areas', target: 'countries_areas', label: 'landmass_id' } },
@@ -79,6 +99,9 @@ const graphElements: ElementDefinition[] = [
   { data: { id: 'oag_regions-countries', source: 'oag_regions', target: 'countries_areas', label: 'region_id' } },
   { data: { id: 'network-airport', source: 'flight_network', target: 'airport', label: 'origin_airport_id' } },
   { data: { id: 'network-carrier', source: 'flight_network', target: 'carrier', label: 'carrier_id' } },
+  { data: { id: 'network-aircraft_model', source: 'flight_network', target: 'aircraft_model', label: 'aircraft_id' } },
+  { data: { id: 'aircraft_model-carrier', source: 'aircraft_model', target: 'carrier', label: 'carrier_id' } },
+  { data: { id: 'seat_map-aircraft_model', source: 'seat_map', target: 'aircraft_model', label: 'model_id' } },
   { data: { id: 'mapping-weather', source: 'mapping_airport', target: 'weather', label: 'station_id' } },
   { data: { id: 'mapping-aircraft', source: 'mapping_airport', target: 'aircraft', label: 'aircraft_type' } },
 ]
@@ -89,6 +112,8 @@ const NODE_COLUMNS: Record<string, string[]> = {
   mapping_airport: ['mapping_id', 'airport_id', 'area_id', 'station_id', 'aircraft_type', 'updated_at'],
   runway: ['runway_id', 'airport_id', 'length_m', 'width_m', 'surface', 'heading'],
   airport_cycles: ['cycle_id', 'airport_id', 'cycle_date', 'arrivals', 'departures'],
+  terminal: ['terminal_id', 'airport_id', 'name', 'concourse', 'gates_count'],
+  gate: ['gate_id', 'terminal_id', 'code', 'jet_bridge', 'max_wingspan_m'],
   mapping_airport_area: ['area_id', 'country_area_id', 'region_id', 'geom'],
   countries_areas: ['country_area_id', 'iso2', 'landmass_id', 'name'],
   landmass_areas: ['landmass_id', 'name', 'continent'],
@@ -96,6 +121,8 @@ const NODE_COLUMNS: Record<string, string[]> = {
   oag_regions: ['region_id', 'name', 'parent_region_id'],
   flight_network: ['flight_id', 'origin_airport_id', 'carrier_id', 'departure_ts', 'arrival_ts'],
   carrier: ['carrier_id', 'iata', 'icao', 'name', 'country'],
+  aircraft_model: ['model_id', 'carrier_id', 'manufacturer', 'model', 'range_km'],
+  seat_map: ['seat_map_id', 'model_id', 'cabin', 'rows', 'seats_per_row'],
   aircraft: ['aircraft_type', 'manufacturer', 'model', 'seats'],
   weather: ['station_id', 'observed_at', 'temp_c', 'wind_kt', 'visibility_m'],
 }
@@ -119,66 +146,14 @@ const COLLAPSED_FOLDER_BODY_HEIGHT = 22
 const FOLDER_HEADER_HEIGHT = 24
 const FOLDER_HEADER_GAP = 2
 const FOLDER_OVERLAY_OFFSET = 28
-const CONTAINER_OVERLAP_GAP = 28
-
-type ElementData = {
-  id?: string
-  source?: string
-  target?: string
-  parent?: string
-  type?: string
-  label?: string
-}
-
-const nodeMetaById = new Map<string, { parent?: string; type?: string }>()
-graphElements.forEach((element) => {
-  const data = element.data as ElementData
-  if (data?.id && !data.source) {
-    nodeMetaById.set(data.id, { parent: data.parent, type: data.type })
-  }
-})
-
-/** Returns the top-level container of a node: its parent domain, or itself for top-level nodes. */
-function containerIdOf(nodeId: string): string {
-  return nodeMetaById.get(nodeId)?.parent ?? nodeId
-}
-
-type MetaEdge = {
-  sourceNode: string
-  targetNode: string
-  sourceContainer: string
-  targetContainer: string
-  label?: string
-}
-
-/**
- * Cross-container relationships derived from the table edges: any edge whose endpoints live in
- * two different containers (two domains, or a domain and an external entity). They are drawn as
- * aggregated links so relationships survive when a group is collapsed. Each keeps its underlying
- * node endpoints so an open group can anchor the link on the exact item it concerns.
- */
-const metaEdges: MetaEdge[] = (() => {
-  const result: MetaEdge[] = []
-
-  graphElements.forEach((element) => {
-    const data = element.data as ElementData
-    if (!data?.source || !data.target) return
-
-    const sourceContainer = containerIdOf(data.source)
-    const targetContainer = containerIdOf(data.target)
-    if (sourceContainer === targetContainer) return
-
-    result.push({
-      sourceNode: data.source,
-      targetNode: data.target,
-      sourceContainer,
-      targetContainer,
-      label: data.label,
-    })
-  })
-
-  return result
-})()
+// Gap kept between adjacent top-level containers. Generous enough that the aggregated cross-group
+// link labels (e.g. "area_id") sit in clear space rather than colliding with neighbouring folders.
+const CONTAINER_OVERLAP_GAP = 56
+// Tighter gap used between siblings INSIDE a group (a leaf node vs a subgroup folder, etc.).
+const INNER_SIBLING_GAP = 20
+// Cap for the default (fully-folded) view so a tightly-packed model doesn't zoom past a comfortable
+// scale and balloon the zoom-scaled entity nodes relative to the fixed-pixel collapsed folders.
+const DEFAULT_VIEW_MAX_ZOOM = 1
 
 function cssVar(name: string, fallback: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
@@ -332,62 +307,98 @@ function runCollisionSafeLayout(cy: Core, animate: boolean, onStop?: () => void)
     animate,
     animationDuration: 260,
     avoidOverlap: true,
-    componentSpacing: 140,
-    edgeElasticity: () => 80,
+    componentSpacing: 70,
+    edgeElasticity: () => 60,
     fit: true,
-    gravity: 0.18,
-    idealEdgeLength: () => 150,
-    nestingFactor: 1.35,
+    gravity: 0.45,
+    idealEdgeLength: () => 70,
+    nestingFactor: 0.9,
     nodeDimensionsIncludeLabels: true,
-    nodeOverlap: 64,
-    nodeRepulsion: () => 9000,
+    nodeOverlap: 18,
+    nodeRepulsion: () => 3800,
     numIter: animate ? 900 : 1800,
-    padding: 72,
+    padding: 30,
     randomize: false,
     refresh: animate ? 12 : 30,
-    spacingFactor: 1.55,
+    spacingFactor: 0.85,
   })
 
   if (onStop) layout.one('layoutstop', onStop)
   layout.run()
 }
 
-function collapseAllDomainFolders(cy: Core) {
-  const domainSnapshots = cy.nodes('[type = "domain"]').map((domain) => ({
-    domain,
-    expandedBox: domain.boundingBox({
-      includeEdges: false,
-      includeLabels: false,
-      includeNodes: true,
-      includeOverlays: false,
-      includeUnderlays: false,
-    }),
-  }))
-
-  cy.batch(() => {
-    domainSnapshots.forEach(({ domain, expandedBox }) => {
-      const descendants = domain.descendants()
-      const relatedEdges = descendants.connectedEdges()
-
-      domain.data({
-        collapsedModelWidth: expandedBox.w,
-        collapsedModelX: expandedBox.x1,
-        collapsedModelY: expandedBox.y1,
-      })
-      domain.addClass('is-folder-collapsed')
-      descendants.style('display', 'none')
-      relatedEdges.style('display', 'none')
-    })
-    syncRelationshipVisibility(cy)
+/** True when any ancestor group of the node is collapsed or hidden, i.e. the node is folded away. */
+function isFoldedAway(node: NodeSingular): boolean {
+  return node.ancestors().some((ancestor) => {
+    const group = ancestor as NodeSingular
+    return group.hasClass('is-folder-collapsed') || group.hasClass('is-folder-hidden')
   })
 }
 
-function syncRelationshipVisibility(cy: Core) {
-  cy.edges().forEach((edge) => {
-    const shouldShow = edge.source().visible() && edge.target().visible()
+/** Whether a node should be drawn: it isn't hidden itself and no ancestor folds it away. */
+function isNodeRendered(node: NodeSingular): boolean {
+  if (node.hasClass('is-folder-hidden')) return false
+  return !isFoldedAway(node)
+}
 
-    edge.style('display', shouldShow ? 'element' : 'none')
+/**
+ * Recomputes `display` for every node and edge from the collapse/hidden classes. A node renders
+ * unless it (or any ancestor) is hidden, or an ancestor group is collapsed. A collapsed group is
+ * itself still rendered (as a compact folder); only its descendants fold away. An edge renders
+ * only when both endpoints render. Works for arbitrarily deep nesting.
+ */
+function applyVisibility(cy: Core) {
+  cy.batch(() => {
+    cy.nodes().forEach((node) => {
+      node.style('display', isNodeRendered(node) ? 'element' : 'none')
+    })
+    cy.edges().forEach((edge) => {
+      const shouldShow = isNodeRendered(edge.source()) && isNodeRendered(edge.target())
+      edge.style('display', shouldShow ? 'element' : 'none')
+    })
   })
+}
+
+/**
+ * Collapses a group by clustering its direct children onto its centre (remembering each child's
+ * offset so it can be restored). Cytoscape won't reposition a compound whose children are all
+ * hidden, so without this a folded group would keep a stale position and drift outside its parent.
+ * Clustering instead gives the collapsed compound a real, compact footprint at a well-defined point,
+ * which its own parent then sizes around natively. A child that is itself a (collapsed) subgroup
+ * moves as a unit, so nested folds stay intact.
+ */
+function collapseGroup(domain: NodeSingular) {
+  if (domain.hasClass('is-folder-collapsed')) return
+  const center = domain.position()
+  domain.children().forEach((child) => {
+    const position = child.position()
+    child.data({ preCollapseDx: position.x - center.x, preCollapseDy: position.y - center.y })
+    child.position({ x: center.x, y: center.y })
+  })
+  domain.addClass('is-folder-collapsed')
+}
+
+/** Re-opens a group, restoring its direct children to the offsets recorded when it was collapsed. */
+function expandGroup(domain: NodeSingular) {
+  if (!domain.hasClass('is-folder-collapsed')) return
+  const center = domain.position()
+  domain.children().forEach((child) => {
+    const dx = Number(child.data('preCollapseDx')) || 0
+    const dy = Number(child.data('preCollapseDy')) || 0
+    child.position({ x: center.x + dx, y: center.y + dy })
+  })
+  domain.removeClass('is-folder-collapsed')
+}
+
+/** Collapses every group (deepest first, so each fold nests cleanly) for a fully-folded default. */
+function collapseAllDomainFolders(cy: Core) {
+  const deepestFirst = cy
+    .nodes('[type = "domain"]')
+    .sort((a, b) => (b as NodeSingular).ancestors().length - (a as NodeSingular).ancestors().length)
+  cy.batch(() => {
+    deepestFirst.forEach((domain) => collapseGroup(domain as NodeSingular))
+  })
+  applyVisibility(cy)
 }
 
 type GraphBox = {
@@ -461,9 +472,7 @@ function resolveLocalOverlap(node: NodeSingular) {
 }
 
 /** Rendered-space box (in px, relative to the graph canvas) of a domain's folder, header included. */
-function getDomainFolderRenderedBox(cy: Core, domain: NodeSingular): GraphBox {
-  const zoom = cy.zoom()
-  const pan = cy.pan()
+function getDomainFolderRenderedBox(domain: NodeSingular): GraphBox {
   const box = domain.renderedBoundingBox({
     includeEdges: false,
     includeLabels: false,
@@ -473,15 +482,15 @@ function getDomainFolderRenderedBox(cy: Core, domain: NodeSingular): GraphBox {
   })
 
   if (domain.hasClass('is-folder-collapsed')) {
-    const collapsedModelWidth = Number(domain.data('collapsedModelWidth'))
-    const collapsedModelX = Number(domain.data('collapsedModelX'))
-    const collapsedModelY = Number(domain.data('collapsedModelY'))
-    const width = Number.isFinite(collapsedModelWidth) ? collapsedModelWidth * zoom : COLLAPSED_FOLDER_FALLBACK_WIDTH
-    const x = Number.isFinite(collapsedModelX) ? collapsedModelX * zoom + pan.x : box.x1
-    const y = Number.isFinite(collapsedModelY) ? collapsedModelY * zoom + pan.y : box.y1
-    const top = y - FOLDER_OVERLAY_OFFSET
-    const height = FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT
-    return { x1: x, x2: x + width, y1: top, y2: top + height }
+    // The folded compound is clustered + compact, so its live box centre is reliable.
+    const centerX = (box.x1 + box.x2) / 2
+    const centerY = (box.y1 + box.y2) / 2
+    const width = COLLAPSED_FOLDER_WIDTH
+    const x1 = centerX - width / 2
+    const bodyTop = centerY - COLLAPSED_FOLDER_BODY_HEIGHT / 2
+    const top = bodyTop - FOLDER_HEADER_GAP - FOLDER_HEADER_HEIGHT
+    const bottom = centerY + COLLAPSED_FOLDER_BODY_HEIGHT / 2
+    return { x1, x2: x1 + width, y1: top, y2: bottom }
   }
 
   return { x1: box.x1, x2: box.x2, y1: box.y1 - FOLDER_OVERLAY_OFFSET, y2: box.y2 }
@@ -499,32 +508,31 @@ function getEntityRenderedBox(node: NodeSingular): GraphBox {
   return { x1: box.x1, x2: box.x2, y1: box.y1, y2: box.y2 }
 }
 
-function getContainerRenderedBox(cy: Core, node: NodeSingular): GraphBox {
-  return node.data('type') === 'domain' ? getDomainFolderRenderedBox(cy, node) : getEntityRenderedBox(node)
+function getContainerRenderedBox(node: NodeSingular): GraphBox {
+  return node.data('type') === 'domain' ? getDomainFolderRenderedBox(node) : getEntityRenderedBox(node)
+}
+
+/**
+ * Translates a node (and everything it visually contains) by a model delta. Cytoscape only relays a
+ * position change to children that are *visible*, so the rule differs by kind:
+ *  - an OPEN group: recurse into its children (the group node re-centres on them);
+ *  - a FOLDED group: set its own position directly — its children are hidden and clustered, and will
+ *    be re-placed relative to this position when it is later expanded;
+ *  - a leaf / external node: move it outright.
+ * This keeps a group and its folded subgroups moving as one rigid unit at any nesting depth.
+ */
+function translateNode(node: NodeSingular, modelDx: number, modelDy: number) {
+  if (node.data('type') === 'domain' && !node.hasClass('is-folder-collapsed')) {
+    node.children().forEach((child) => translateNode(child as NodeSingular, modelDx, modelDy))
+    return
+  }
+  const position = node.position()
+  node.position({ x: position.x + modelDx, y: position.y + modelDy })
 }
 
 /** Moves a whole container (a domain and its descendants, or a single external node) in model space. */
 function shiftContainer(cy: Core, node: NodeSingular, modelDx: number, modelDy: number) {
-  if (node.data('type') === 'domain') {
-    cy.batch(() => {
-      node.descendants('node').forEach((descendant) => {
-        const position = descendant.position()
-        descendant.position({ x: position.x + modelDx, y: position.y + modelDy })
-      })
-
-      if (node.hasClass('is-folder-collapsed')) {
-        const collapsedModelX = Number(node.data('collapsedModelX'))
-        const collapsedModelY = Number(node.data('collapsedModelY'))
-        if (Number.isFinite(collapsedModelX) && Number.isFinite(collapsedModelY)) {
-          node.data({ collapsedModelX: collapsedModelX + modelDx, collapsedModelY: collapsedModelY + modelDy })
-        }
-      }
-    })
-    return
-  }
-
-  const position = node.position()
-  node.position({ x: position.x + modelDx, y: position.y + modelDy })
+  cy.batch(() => translateNode(node, modelDx, modelDy))
 }
 
 /** Iteratively pushes overlapping top-level containers (domains and external entities) apart. */
@@ -537,7 +545,7 @@ function resolveContainerOverlaps(cy: Core) {
 
   for (let pass = 0; pass < maxPasses; pass += 1) {
     let moved = false
-    const items = containers.map((node: NodeSingular) => ({ node, box: getContainerRenderedBox(cy, node) }))
+    const items = containers.map((node: NodeSingular) => ({ node, box: getContainerRenderedBox(node) }))
 
     for (let i = 0; i < items.length; i += 1) {
       for (let j = i + 1; j < items.length; j += 1) {
@@ -564,14 +572,54 @@ function resolveContainerOverlaps(cy: Core) {
           shiftContainer(cy, b.node, 0, -direction * push)
         }
 
-        a.box = getContainerRenderedBox(cy, a.node)
-        b.box = getContainerRenderedBox(cy, b.node)
+        a.box = getContainerRenderedBox(a.node)
+        b.box = getContainerRenderedBox(b.node)
         moved = true
       }
     }
 
     if (!moved) break
   }
+}
+
+/**
+ * Uniformly shrinks the top-level containers toward their shared centroid so the folded layout fits
+ * the viewport comfortably at a 1:1 zoom, while preserving the force layout's relative arrangement
+ * (every container keeps its direction from the centroid — only distances scale). The force layout
+ * spaced things for EXPANDED groups, so folded they leave a lot of slack; this reclaims it without
+ * blobbing them together the way a per-pair gravity pull would. Runs in model space (positions),
+ * independent of the current zoom; resolveContainerOverlaps afterwards guarantees clear gaps.
+ */
+function compactContainers(cy: Core) {
+  const containers = cy.nodes().filter((node: NodeSingular) => node.parent().empty() && node.visible())
+  if (containers.length < 2) return
+
+  const centers = containers.map((node: NodeSingular) => {
+    const position = node.position()
+    return { node, x: position.x, y: position.y }
+  })
+  const minX = Math.min(...centers.map((c) => c.x))
+  const maxX = Math.max(...centers.map((c) => c.x))
+  const minY = Math.min(...centers.map((c) => c.y))
+  const maxY = Math.max(...centers.map((c) => c.y))
+  const spanX = maxX - minX
+  const spanY = maxY - minY
+
+  // Target span of the centre-points, in model units (== screen px at 1:1). Leaves room around them
+  // for the fixed-size folders and their labels within the visible canvas.
+  const targetX = cy.width() * 0.5
+  const targetY = cy.height() * 0.42
+  const scale = Math.min(1, spanX > 0 ? targetX / spanX : 1, spanY > 0 ? targetY / spanY : 1)
+  if (scale >= 0.999) return
+
+  const centroidX = centers.reduce((sum, c) => sum + c.x, 0) / centers.length
+  const centroidY = centers.reduce((sum, c) => sum + c.y, 0) / centers.length
+
+  cy.batch(() => {
+    centers.forEach((c) => {
+      shiftContainer(cy, c.node, (scale - 1) * (c.x - centroidX), (scale - 1) * (c.y - centroidY))
+    })
+  })
 }
 
 type MetaLink = {
@@ -755,8 +803,6 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     const overlays = cy.nodes('[type = "domain"]:visible').map((domain) => {
       const isCollapsed = domain.hasClass('is-folder-collapsed')
-      const zoom = cy.zoom()
-      const pan = cy.pan()
       const box = domain.renderedBoundingBox({
         includeEdges: false,
         includeLabels: false,
@@ -764,40 +810,43 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
         includeOverlays: false,
         includeUnderlays: false,
       })
-      const collapsedModelX = Number(domain.data('collapsedModelX'))
-      const collapsedModelY = Number(domain.data('collapsedModelY'))
-      // Fixed compact width for collapsed folders, in screen pixels so the folded
-      // group keeps a constant size regardless of zoom (its position still tracks
-      // the graph via the zoom/pan-projected top-left below).
-      const collapsedWidth = COLLAPSED_FOLDER_WIDTH
-      const collapsedX = Number.isFinite(collapsedModelX) ? collapsedModelX * zoom + pan.x : box.x1
-      const collapsedY = Number.isFinite(collapsedModelY) ? collapsedModelY * zoom + pan.y : box.y1
 
-      return {
+      const base = {
         collapsed: isCollapsed,
         faded: domain.hasClass('is-faded'),
-        height: isCollapsed ? COLLAPSED_FOLDER_BODY_HEIGHT : box.h,
         id: domain.id(),
         itemCount: domain.descendants('node[type != "domain"]').length,
         label: String(domain.data('label')),
-        width: isCollapsed ? collapsedWidth : box.w,
-        x: isCollapsed ? collapsedX : box.x1,
-        y: isCollapsed ? collapsedY : box.y1,
+      }
+
+      if (!isCollapsed) {
+        return { ...base, height: box.h, width: box.w, x: box.x1, y: box.y1 }
+      }
+
+      // A folded group is a fixed-size compact folder centred on its live (clustered, compact)
+      // node box — so it sits exactly where Cytoscape reserves space, which keeps it inside its
+      // still-open parent at any nesting depth.
+      const centerX = (box.x1 + box.x2) / 2
+      const centerY = (box.y1 + box.y2) / 2
+      return {
+        ...base,
+        height: COLLAPSED_FOLDER_BODY_HEIGHT,
+        width: COLLAPSED_FOLDER_WIDTH,
+        x: centerX - COLLAPSED_FOLDER_WIDTH / 2,
+        y: centerY - COLLAPSED_FOLDER_BODY_HEIGHT / 2,
       }
     })
 
     setFolderOverlays(overlays)
 
-    // Cross-container links: keep relationships visible when a container is collapsed. A collapsed
-    // group anchors on its rectangle; an open group anchors on the exact item the edge concerns.
-    const folderBoxIndex: Record<string, { box: GraphBox; collapsed: boolean }> = {}
+    // Aggregated cross-group links: keep a relationship visible whenever at least one of its
+    // endpoints is folded away. Each endpoint anchors on the OUTERMOST collapsed group that hides
+    // it (so the line leaves that folder), or on the exact item when fully open. Works at any
+    // nesting depth and merges duplicates that resolve to the same pair of anchors.
+    const folderBoxIndex: Record<string, GraphBox> = {}
     overlays.forEach((folder) => {
-      // The rectangle body only (the panel / "N Items" bar), excluding the header above it.
       const height = folder.collapsed ? COLLAPSED_FOLDER_BODY_HEIGHT : folder.height
-      folderBoxIndex[folder.id] = {
-        collapsed: folder.collapsed,
-        box: { x1: folder.x, x2: folder.x + folder.width, y1: folder.y, y2: folder.y + height },
-      }
+      folderBoxIndex[folder.id] = { x1: folder.x, x2: folder.x + folder.width, y1: folder.y, y2: folder.y + height }
     })
 
     const nodeBoxIndex: Record<string, GraphBox> = {}
@@ -805,34 +854,40 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
       nodeBoxIndex[node.id()] = getEntityRenderedBox(node)
     })
 
-    const resolveAnchor = (nodeId: string, containerId: string) => {
-      const folder = folderBoxIndex[containerId]
-      // Open group -> anchor on the concerned item; collapsed group -> anchor on its rectangle.
-      if (folder && !folder.collapsed && nodeBoxIndex[nodeId]) return { box: nodeBoxIndex[nodeId], key: nodeId }
-      if (folder) return { box: folder.box, key: containerId }
-      if (nodeBoxIndex[nodeId]) return { box: nodeBoxIndex[nodeId], key: nodeId }
-      return null
+    type Anchor = { key: string; box: GraphBox; folded: boolean }
+    const anchorForEndpoint = (node: NodeSingular): Anchor | null => {
+      const ancestors = node.ancestors()
+      if (node.hasClass('is-folder-hidden') || ancestors.some((a) => (a as NodeSingular).hasClass('is-folder-hidden'))) {
+        return null
+      }
+
+      const collapsed = ancestors.filter((a) => (a as NodeSingular).hasClass('is-folder-collapsed'))
+      if (collapsed.nonempty()) {
+        // The outermost collapsed group (closest to the root) is the one that actually hides the node.
+        const outer = collapsed.min((a) => (a as NodeSingular).ancestors().length).ele as NodeSingular
+        const box = folderBoxIndex[outer.id()]
+        return box ? { key: outer.id(), box, folded: true } : null
+      }
+      const box = nodeBoxIndex[node.id()]
+      return box ? { key: node.id(), box, folded: false } : null
     }
 
     const grouped = new Map<string, { source: GraphBox; target: GraphBox; labels: string[] }>()
-    metaEdges.forEach((edge) => {
-      const sourceCollapsed = folderBoxIndex[edge.sourceContainer]?.collapsed ?? false
-      const targetCollapsed = folderBoxIndex[edge.targetContainer]?.collapsed ?? false
-      // Only show when at least one side is collapsed; otherwise real table edges carry it.
-      if (!sourceCollapsed && !targetCollapsed) return
-
-      const source = resolveAnchor(edge.sourceNode, edge.sourceContainer)
-      const target = resolveAnchor(edge.targetNode, edge.targetContainer)
+    cy.edges().forEach((edge) => {
+      const source = anchorForEndpoint(edge.source())
+      const target = anchorForEndpoint(edge.target())
       if (!source || !target) return
+      if (source.key === target.key) return // both fold into the same group
+      if (!source.folded && !target.folded) return // both open -> the real table edge carries it
 
-      // Collapse duplicate lines that resolve to the same pair of anchors (e.g. both collapsed).
       const key = `${source.key}::${target.key}`
+      const label = String(edge.data('label') ?? '')
       const existing = grouped.get(key)
       if (existing) {
-        if (edge.label) existing.labels.push(edge.label)
+        if (label) existing.labels.push(label)
         return
       }
-      grouped.set(key, { source: source.box, target: target.box, labels: edge.label ? [edge.label] : [] })
+      grouped.set(key, { source: source.box, target: target.box, labels: label ? [label] : [] })
     })
 
     const links: MetaLink[] = []
@@ -859,35 +914,15 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     const domain = cy?.getElementById(domainId)
     if (!cy || !domain?.nonempty()) return
 
-    const descendants = domain.descendants()
-    const relatedEdges = descendants.connectedEdges()
-    const isCollapsed = domain.hasClass('is-folder-collapsed')
-
-    if (isCollapsed) {
-      domain.removeClass('is-folder-collapsed')
-      domain.removeData('collapsedModelWidth collapsedModelX collapsedModelY')
-      descendants.style('display', 'element')
-      relatedEdges.style('display', 'element')
+    // Expanding only reveals one level: any nested groups stay collapsed (their own
+    // class keeps them folded) until the user opens them in turn.
+    if (domain.hasClass('is-folder-collapsed')) {
+      expandGroup(domain as NodeSingular)
     } else {
-      const expandedBox = domain.boundingBox({
-        includeEdges: false,
-        includeLabels: false,
-        includeNodes: true,
-        includeOverlays: false,
-        includeUnderlays: false,
-      })
-
-      domain.data({
-        collapsedModelWidth: expandedBox.w,
-        collapsedModelX: expandedBox.x1,
-        collapsedModelY: expandedBox.y1,
-      })
-      domain.addClass('is-folder-collapsed')
-      descendants.style('display', 'none')
-      relatedEdges.style('display', 'none')
+      collapseGroup(domain as NodeSingular)
     }
 
-    syncRelationshipVisibility(cy)
+    applyVisibility(cy)
     resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
@@ -897,18 +932,14 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     const domain = cy?.getElementById(domainId)
     if (!cy || !domain?.nonempty()) return
 
-    const descendants = domain.descendants()
-    const relatedEdges = descendants.connectedEdges()
-
-    relatedEdges.style('display', 'none')
-    descendants.style('display', 'none')
-    domain.style('display', 'none')
+    domain.addClass('is-folder-hidden')
     setHiddenDomains((prev) =>
       prev.some((item) => item.id === domainId)
         ? prev
         : [...prev, { id: domainId, label: String(domain.data('label')) }],
     )
-    syncRelationshipVisibility(cy)
+    applyVisibility(cy)
+    resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -917,16 +948,11 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     const domain = cy?.getElementById(domainId)
     if (!cy || !domain?.nonempty()) return
 
-    domain.style('display', 'element')
-    const isCollapsed = domain.hasClass('is-folder-collapsed')
-    const descendants = domain.descendants()
-    // Restore the group in its collapsed state by default; only reveal the
-    // inner nodes/edges if the group was expanded when it was hidden.
-    descendants.style('display', isCollapsed ? 'none' : 'element')
-    if (!isCollapsed) descendants.connectedEdges().style('display', 'element')
-
+    // Reveal the group again. Its own collapse state (and that of any nested
+    // groups) is preserved, so applyVisibility restores exactly what was folded.
+    domain.removeClass('is-folder-hidden')
     setHiddenDomains((prev) => prev.filter((item) => item.id !== domainId))
-    syncRelationshipVisibility(cy)
+    applyVisibility(cy)
     resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
@@ -950,31 +976,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     if (!cy || !domain?.nonempty()) return
 
     const zoom = cy.zoom()
-    const dx = renderedDx / zoom
-    const dy = renderedDy / zoom
-
-    cy.batch(() => {
-      domain.descendants('node').forEach((node) => {
-        const position = node.position()
-        node.position({
-          x: position.x + dx,
-          y: position.y + dy,
-        })
-      })
-
-      if (domain.hasClass('is-folder-collapsed')) {
-        const collapsedModelX = Number(domain.data('collapsedModelX'))
-        const collapsedModelY = Number(domain.data('collapsedModelY'))
-
-        if (Number.isFinite(collapsedModelX) && Number.isFinite(collapsedModelY)) {
-          domain.data({
-            collapsedModelX: collapsedModelX + dx,
-            collapsedModelY: collapsedModelY + dy,
-          })
-        }
-      }
-    })
-
+    shiftContainer(cy, domain as NodeSingular, renderedDx / zoom, renderedDy / zoom)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -1040,12 +1042,14 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     runCollisionSafeLayout(cy, false, () => {
       collapseAllDomainFolders(cy)
+      // Pin the display to a 1:1 zoom up front, then pack and de-overlap the folded containers AT
+      // that zoom. Collapsed folders are a fixed pixel size while entity nodes scale with zoom, so
+      // doing the spacing maths at the final zoom is the only way gaps stay consistent for both —
+      // compacting at one zoom and viewing at another is what makes folders overlap or balloon.
+      if (cy.zoom() > DEFAULT_VIEW_MAX_ZOOM) cy.zoom(DEFAULT_VIEW_MAX_ZOOM)
+      compactContainers(cy)
       resolveContainerOverlaps(cy)
-      // Re-fit on the COLLAPSED (compact) layout so labels render at a readable
-      // scale by default, instead of staying zoomed out for the expanded layout.
-      // Generous padding leaves room for the React folder overlays (headers / "N
-      // Items" boxes) that extend beyond the Cytoscape node bounds.
-      cy.fit(undefined, 110)
+      cy.center()
       syncFolderOverlays()
     })
     cy.ready(syncFolderOverlays)

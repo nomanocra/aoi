@@ -195,12 +195,12 @@
   background: var(--safir-panel);
   border: 1px solid var(--safir-border-strong);
   border-radius: var(--radius-panel, 8px);
-  bottom: 16px;
   box-shadow: var(--shadow-panel);
   display: flex;
   flex-direction: column;
   gap: 8px;
   left: 16px;
+  top: 16px;
   max-width: 240px;
   padding: 10px 12px;
   position: absolute;
