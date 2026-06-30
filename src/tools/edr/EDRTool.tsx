@@ -535,17 +535,21 @@ function shiftContainer(cy: Core, node: NodeSingular, modelDx: number, modelDy: 
   cy.batch(() => translateNode(node, modelDx, modelDy))
 }
 
-/** Iteratively pushes overlapping top-level containers (domains and external entities) apart. */
-function resolveContainerOverlaps(cy: Core) {
+/**
+ * Iteratively pushes a set of sibling nodes apart until no two overlap (keeping `gap` between them).
+ * Each sibling is measured by its full footprint — a folded group counts as its compact folder box
+ * (header included), an open group as its whole rectangle, a leaf as its node+label box — and moved
+ * as a rigid unit, so this works for any mix of nodes and (collapsed or open) subgroups.
+ */
+function separateSiblings(cy: Core, siblings: NodeSingular[], gap: number) {
   const zoom = cy.zoom()
-  const containers = cy.nodes().filter((node: NodeSingular) => node.parent().empty() && node.visible())
-  if (containers.length < 2) return
+  const nodes = siblings.filter((node) => node.visible())
+  if (nodes.length < 2) return
 
   const maxPasses = 16
-
   for (let pass = 0; pass < maxPasses; pass += 1) {
     let moved = false
-    const items = containers.map((node: NodeSingular) => ({ node, box: getContainerRenderedBox(node) }))
+    const items = nodes.map((node) => ({ node, box: getContainerRenderedBox(node) }))
 
     for (let i = 0; i < items.length; i += 1) {
       for (let j = i + 1; j < items.length; j += 1) {
@@ -561,12 +565,12 @@ function resolveContainerOverlaps(cy: Core) {
         const bCenterY = (b.box.y1 + b.box.y2) / 2
 
         if (overlapX < overlapY) {
-          const push = (overlapX + CONTAINER_OVERLAP_GAP) / 2 / zoom
+          const push = (overlapX + gap) / 2 / zoom
           const direction = aCenterX <= bCenterX ? -1 : 1
           shiftContainer(cy, a.node, direction * push, 0)
           shiftContainer(cy, b.node, -direction * push, 0)
         } else {
-          const push = (overlapY + CONTAINER_OVERLAP_GAP) / 2 / zoom
+          const push = (overlapY + gap) / 2 / zoom
           const direction = aCenterY <= bCenterY ? -1 : 1
           shiftContainer(cy, a.node, 0, direction * push)
           shiftContainer(cy, b.node, 0, -direction * push)
@@ -580,6 +584,30 @@ function resolveContainerOverlaps(cy: Core) {
 
     if (!moved) break
   }
+}
+
+/**
+ * Resolves overlaps at every level of the hierarchy: inside each open group its children (leaf nodes
+ * AND folded/open subgroups) are spread apart, then the top-level containers are. Deepest groups go
+ * first so a group has already settled its own contents — and grown to fit them — before it is
+ * separated from its own siblings one level up.
+ */
+function resolveContainerOverlaps(cy: Core) {
+  const openGroups = cy
+    .nodes('[type = "domain"]:visible')
+    .filter((group) => !(group as NodeSingular).hasClass('is-folder-collapsed'))
+    .sort((a, b) => (b as NodeSingular).ancestors().length - (a as NodeSingular).ancestors().length)
+
+  openGroups.forEach((group) => {
+    const children = (group as NodeSingular).children().map((child) => child as NodeSingular)
+    separateSiblings(cy, children, INNER_SIBLING_GAP)
+  })
+
+  const topLevel = cy
+    .nodes()
+    .filter((node) => (node as NodeSingular).parent().empty() && (node as NodeSingular).visible())
+    .map((node) => node as NodeSingular)
+  separateSiblings(cy, topLevel, CONTAINER_OVERLAP_GAP)
 }
 
 /**
