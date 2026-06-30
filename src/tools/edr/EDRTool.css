@@ -340,6 +340,13 @@
 .edr-folder__actions {
   display: flex;
   gap: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.edr-folder:hover .edr-folder__actions,
+.edr-folder.is-hovered .edr-folder__actions {
+  opacity: 1;
 }
 
 .edr-folder__actions button {

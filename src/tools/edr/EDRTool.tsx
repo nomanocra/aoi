@@ -657,6 +657,25 @@ function resolveContainerOverlaps(cy: Core) {
 }
 
 /**
+ * Pans the viewport by the minimum amount so `node`'s rendered box sits fully inside the canvas (with
+ * `margin` px of breathing room), preserving the current zoom. A folder revealed from the hidden tray
+ * returns to its stored model position, which — after the user panned or zoomed while it was hidden —
+ * can land off-screen; this nudges just the pan so the group comes back into view without reframing.
+ */
+function panNodeIntoView(cy: Core, node: NodeSingular, margin = 48) {
+  const box = node.renderedBoundingBox({ includeLabels: true, includeOverlays: false })
+  const width = cy.width()
+  const height = cy.height()
+  let dx = 0
+  let dy = 0
+  if (box.x1 < margin) dx = margin - box.x1
+  else if (box.x2 > width - margin) dx = width - margin - box.x2
+  if (box.y1 < margin) dy = margin - box.y1
+  else if (box.y2 > height - margin) dy = height - margin - box.y2
+  if (dx !== 0 || dy !== 0) cy.panBy({ x: dx, y: dy })
+}
+
+/**
  * Uniformly shrinks the top-level containers toward their shared centroid so the folded layout fits
  * the viewport comfortably at a 1:1 zoom, while preserving the force layout's relative arrangement
  * (every container keeps its direction from the centroid — only distances scale). The force layout
@@ -913,6 +932,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   const [metaLinks, setMetaLinks] = useState<MetaLink[]>([])
   const [hiddenDomains, setHiddenDomains] = useState<{ id: string; label: string }[]>([])
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null)
+  const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null)
 
   const syncFolderOverlays = useCallback(() => {
     const cy = cyRef.current
@@ -1075,12 +1095,30 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     setHiddenDomains((prev) => prev.filter((item) => item.id !== domainId))
     applyVisibility(cy)
     resolveContainerOverlaps(cy)
+    panNodeIntoView(cy, domain as NodeSingular)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
   const showAllHidden = useCallback(() => {
-    hiddenDomains.forEach((item) => showFolder(item.id))
-  }, [hiddenDomains, showFolder])
+    const cy = cyRef.current
+    if (!cy || hiddenDomains.length === 0) return
+
+    hiddenDomains.forEach((item) => {
+      const domain = cy.getElementById(item.id)
+      if (domain.nonempty()) domain.removeClass('is-folder-hidden')
+    })
+    setHiddenDomains([])
+    applyVisibility(cy)
+    // The revealed groups return to their stored positions, which may sit far apart or off-screen
+    // (the user moved/panned while they were hidden) — a plain re-center would leave most of them out
+    // of the viewport, so only one shows. Re-pack every top-level container toward the centre and
+    // reframe to the default view, exactly like the initial render, so all groups are visible again.
+    cy.zoom(DEFAULT_VIEW_ZOOM)
+    compactContainers(cy)
+    resolveContainerOverlaps(cy)
+    cy.center()
+    syncFolderOverlays()
+  }, [hiddenDomains, syncFolderOverlays])
 
   const clearSelection = useCallback(() => {
     const cy = cyRef.current
@@ -1232,6 +1270,20 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
       syncFolderOverlays()
     })
 
+    // Hovering anywhere over a group — its background or any node inside it —
+    // reveals that group's header actions. The folder body overlay is
+    // pointer-events: none, so Cytoscape receives these events through it.
+    const domainOf = (node: NodeSingular): string | null => {
+      if (node.data('type') === 'domain') return node.id()
+      const parent = node.parent()
+      return parent.nonempty() ? parent.first().id() : null
+    }
+    cy.on('mouseover', 'node', (event) => {
+      const id = domainOf(event.target as NodeSingular)
+      if (id) setHoveredFolderId(id)
+    })
+    cy.on('mouseout', 'node', () => setHoveredFolderId(null))
+
     return () => {
       cyRef.current = null
       cy.destroy()
@@ -1342,7 +1394,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
         )}
         {folderOverlays.map((folder) => (
           <div
-            className={`edr-folder${folder.collapsed ? ' is-collapsed' : ''}${folder.faded ? ' is-faded' : ''}`}
+            className={`edr-folder${folder.collapsed ? ' is-collapsed' : ''}${folder.faded ? ' is-faded' : ''}${folder.id === hoveredFolderId ? ' is-hovered' : ''}`}
             key={folder.id}
             style={{
               height: `${folder.collapsed ? FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP + COLLAPSED_FOLDER_BODY_HEIGHT : folder.height + FOLDER_OVERLAY_OFFSET}px`,
