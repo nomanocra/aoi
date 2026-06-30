@@ -970,6 +970,11 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     runCollisionSafeLayout(cy, false, () => {
       collapseAllDomainFolders(cy)
       resolveContainerOverlaps(cy)
+      // Re-fit on the COLLAPSED (compact) layout so labels render at a readable
+      // scale by default, instead of staying zoomed out for the expanded layout.
+      // Generous padding leaves room for the React folder overlays (headers / "N
+      // Items" boxes) that extend beyond the Cytoscape node bounds.
+      cy.fit(undefined, 110)
       syncFolderOverlays()
     })
     cy.ready(syncFolderOverlays)
