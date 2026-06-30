@@ -383,6 +383,16 @@ function applyVisibility(cy: Core) {
       edge.style('display', shouldShow ? 'element' : 'none')
     })
   })
+
+  // Cytoscape can leave an element flagged "not displayed" after its `display` is set back to
+  // `element` — most reproducibly on a revealed OPEN group whose descendants were repositioned while
+  // it was folded — so it (and its `visible()`) stays hidden despite a computed display of `element`.
+  // Neither cy.style().update() nor forceRender() clears this; only a real display transition does.
+  // A no-op none→element round-trip (run unbatched, so the two writes aren't coalesced) forces the
+  // renderer to re-evaluate each shown element and puts it back on the canvas.
+  const shown = cy.elements().filter((ele) => ele.style('display') === 'element')
+  shown.style('display', 'none')
+  shown.style('display', 'element')
 }
 
 /**
