@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import cytoscape, { type Core, type ElementDefinition, type NodeSingular, type StylesheetJson } from 'cytoscape'
-import { ChevronDown, ChevronUp, Database, EyeOff, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, Database, Eye, EyeOff, Search } from 'lucide-react'
 import { AoiAppHeader } from '../../components/AoiAppHeader'
 import './EDRTool.css'
 
@@ -714,6 +714,7 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   const folderDragRef = useRef<FolderDragState | null>(null)
   const [folderOverlays, setFolderOverlays] = useState<DomainFolderOverlay[]>([])
   const [metaLinks, setMetaLinks] = useState<MetaLink[]>([])
+  const [hiddenDomains, setHiddenDomains] = useState<{ id: string; label: string }[]>([])
 
   const syncFolderOverlays = useCallback(() => {
     const cy = cyRef.current
@@ -869,9 +870,37 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     relatedEdges.style('display', 'none')
     descendants.style('display', 'none')
     domain.style('display', 'none')
+    setHiddenDomains((prev) =>
+      prev.some((item) => item.id === domainId)
+        ? prev
+        : [...prev, { id: domainId, label: String(domain.data('label')) }],
+    )
     syncRelationshipVisibility(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
+
+  const showFolder = useCallback((domainId: string) => {
+    const cy = cyRef.current
+    const domain = cy?.getElementById(domainId)
+    if (!cy || !domain?.nonempty()) return
+
+    domain.style('display', 'element')
+    const isCollapsed = domain.hasClass('is-folder-collapsed')
+    const descendants = domain.descendants()
+    // Restore the group in its collapsed state by default; only reveal the
+    // inner nodes/edges if the group was expanded when it was hidden.
+    descendants.style('display', isCollapsed ? 'none' : 'element')
+    if (!isCollapsed) descendants.connectedEdges().style('display', 'element')
+
+    setHiddenDomains((prev) => prev.filter((item) => item.id !== domainId))
+    syncRelationshipVisibility(cy)
+    resolveContainerOverlaps(cy)
+    syncFolderOverlays()
+  }, [syncFolderOverlays])
+
+  const showAllHidden = useCallback(() => {
+    hiddenDomains.forEach((item) => showFolder(item.id))
+  }, [hiddenDomains, showFolder])
 
   const moveFolderBy = useCallback((domainId: string, renderedDx: number, renderedDy: number) => {
     const cy = cyRef.current
@@ -1008,6 +1037,32 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
   return (
     <div className="edr-catalog-graph" aria-label={`${catalogue} catalog graph`}>
       <div className="edr-catalog-graph__canvas" ref={graphRef} />
+      {hiddenDomains.length > 0 && (
+        <div className="edr-hidden-tray" aria-label="Hidden groups">
+          <div className="edr-hidden-tray__head">
+            <span>
+              <EyeOff size={13} strokeWidth={2} aria-hidden="true" /> Hidden ({hiddenDomains.length})
+            </span>
+            <button onClick={showAllHidden} type="button">
+              Show all
+            </button>
+          </div>
+          <div className="edr-hidden-tray__list">
+            {hiddenDomains.map((item) => (
+              <button
+                className="edr-hidden-tray__item"
+                key={item.id}
+                onClick={() => showFolder(item.id)}
+                title={`Show ${item.label}`}
+                type="button"
+              >
+                <Eye size={13} strokeWidth={2} aria-hidden="true" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="edr-folder-layer" aria-hidden="false">
         {metaLinks.length > 0 && (
           <svg className="edr-meta-links" aria-hidden="true">
