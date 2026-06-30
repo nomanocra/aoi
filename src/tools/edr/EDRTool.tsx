@@ -690,6 +690,49 @@ function compactContainers(cy: Core) {
   })
 }
 
+/**
+ * Re-arranges an open group's children into a compact grid centred on where they already are. The
+ * force layout spreads them apart (their cross-group edges tug each toward a distant neighbour),
+ * leaving a big half-empty box — and a uniform shrink keeps whatever long line it produced. A small
+ * grid packs them into a tidy block instead. Cells are sized to the largest child (a folded subgroup
+ * counts as its compact folder, with extra row height for its header strip); rows/cols stay roughly
+ * square. resolveContainerOverlaps afterwards only has to confirm the (already clear) gaps.
+ */
+function compactGroupChildren(cy: Core, group: NodeSingular) {
+  const children = group
+    .children()
+    .filter((child) => (child as NodeSingular).visible())
+    .map((child) => child as NodeSingular)
+  if (children.length < 2) return
+
+  const zoom = cy.zoom() || 1
+  const boxes = children.map((child) => {
+    const box = getContainerRenderedBox(child)
+    return { child, w: box.x2 - box.x1, h: box.y2 - box.y1, cx: (box.x1 + box.x2) / 2, cy: (box.y1 + box.y2) / 2 }
+  })
+
+  const cellW = Math.max(...boxes.map((b) => b.w)) + INNER_SIBLING_GAP
+  const cellH = Math.max(...boxes.map((b) => b.h)) + INNER_SIBLING_GAP + FOLDER_OVERLAY_OFFSET
+  const cols = Math.ceil(Math.sqrt(children.length))
+  const rows = Math.ceil(children.length / cols)
+  const gridW = cols * cellW
+  const gridH = rows * cellH
+
+  // Centre the grid on the children's current centroid so the group barely shifts overall.
+  const centroidX = boxes.reduce((sum, b) => sum + b.cx, 0) / boxes.length
+  const centroidY = boxes.reduce((sum, b) => sum + b.cy, 0) / boxes.length
+
+  cy.batch(() => {
+    boxes.forEach((b, index) => {
+      const col = index % cols
+      const row = Math.floor(index / cols)
+      const targetX = centroidX - gridW / 2 + cellW * (col + 0.5)
+      const targetY = centroidY - gridH / 2 + cellH * (row + 0.5)
+      shiftContainer(cy, b.child, (targetX - b.cx) / zoom, (targetY - b.cy) / zoom)
+    })
+  })
+}
+
 type MetaLink = {
   id: string
   label?: string
@@ -984,13 +1027,17 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     // Expanding only reveals one level: any nested groups stay collapsed (their own
     // class keeps them folded) until the user opens them in turn.
-    if (domain.hasClass('is-folder-collapsed')) {
+    const expanding = domain.hasClass('is-folder-collapsed')
+    if (expanding) {
       expandGroup(domain as NodeSingular)
     } else {
       collapseGroup(domain as NodeSingular)
     }
 
     applyVisibility(cy)
+    // Pull the just-revealed children together so the open group is tight instead of inheriting the
+    // force layout's cross-group sprawl; resolveContainerOverlaps then restores the minimum gaps.
+    if (expanding) compactGroupChildren(cy, domain as NodeSingular)
     resolveContainerOverlaps(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
@@ -1045,6 +1092,9 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     const zoom = cy.zoom()
     shiftContainer(cy, domain as NodeSingular, renderedDx / zoom, renderedDy / zoom)
+    // Refresh group bounds every drag step (not just on release) so a parent rectangle and its header
+    // track the moved group live, instead of lagging behind and momentarily overlapping it.
+    refreshCompoundBounds(cy)
     syncFolderOverlays()
   }, [syncFolderOverlays])
 
@@ -1156,7 +1206,15 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     })
 
     cy.on('tap', (event) => {
-      if (event.target === cy) {
+      const target = event.target
+      // Deselect on a tap anywhere that isn't a selectable entity node: the empty
+      // canvas, a group (domain) background, or an edge all clear the selection.
+      const isEntityNode =
+        target !== cy &&
+        typeof target.isNode === 'function' &&
+        target.isNode() &&
+        target.data('type') !== 'domain'
+      if (!isEntityNode) {
         cy.elements().removeClass('is-faded')
         setSelectedNode(null)
       }
