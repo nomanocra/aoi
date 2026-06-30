@@ -564,12 +564,13 @@ function borderPoint(box: GraphBox, towardX: number, towardY: number) {
   return { x: centerX + dx * scale, y: centerY + dy * scale }
 }
 
-type EDRHeaderActionsProps = {
+type CatalogueSelectProps = {
   selectedCatalogue: string | null
   onCatalogueSelect: (catalogue: string) => void
+  label?: string
 }
 
-function EDRHeaderActions({ selectedCatalogue, onCatalogueSelect }: EDRHeaderActionsProps) {
+function CatalogueSelect({ selectedCatalogue, onCatalogueSelect, label }: CatalogueSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -595,7 +596,7 @@ function EDRHeaderActions({ selectedCatalogue, onCatalogueSelect }: EDRHeaderAct
     <div className="edr-catalogue-control" onBlur={(event) => {
       if (!event.currentTarget.contains(event.relatedTarget)) closeCatalogue()
     }}>
-      <span className="edr-catalogue-control__label">Flight Pulse Catalog</span>
+      {label && <span className="edr-catalogue-control__label">{label}</span>}
       <button
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -649,7 +650,22 @@ function EDRHeaderActions({ selectedCatalogue, onCatalogueSelect }: EDRHeaderAct
   )
 }
 
-function EDREmptyState() {
+type EDRHeaderActionsProps = {
+  selectedCatalogue: string | null
+  onCatalogueSelect: (catalogue: string) => void
+}
+
+function EDRHeaderActions({ selectedCatalogue, onCatalogueSelect }: EDRHeaderActionsProps) {
+  return (
+    <CatalogueSelect
+      label="Flight Pulse Catalog"
+      onCatalogueSelect={onCatalogueSelect}
+      selectedCatalogue={selectedCatalogue}
+    />
+  )
+}
+
+function EDREmptyState({ selectedCatalogue, onCatalogueSelect }: EDRHeaderActionsProps) {
   return (
     <div className="edr-empty-state">
       <svg
@@ -667,6 +683,9 @@ function EDREmptyState() {
         <rect className="edr-empty-state__node" x="15.5" y="49.5" width="39" height="17" rx="2" />
       </svg>
       <h1>Select a catalog</h1>
+      <div className="edr-empty-state__action">
+        <CatalogueSelect onCatalogueSelect={onCatalogueSelect} selectedCatalogue={selectedCatalogue} />
+      </div>
     </div>
   )
 }
@@ -1103,7 +1122,11 @@ function EDRTool() {
         subtitle="By Airline Operations Intelligence"
       />
       <section className="edr-app__workspace" aria-label="EDR App workspace">
-        {selectedCatalogue ? <EDRCatalogGraph catalogue={selectedCatalogue} /> : <EDREmptyState />}
+        {selectedCatalogue ? (
+          <EDRCatalogGraph catalogue={selectedCatalogue} />
+        ) : (
+          <EDREmptyState onCatalogueSelect={setSelectedCatalogue} selectedCatalogue={selectedCatalogue} />
+        )}
       </section>
     </main>
   )

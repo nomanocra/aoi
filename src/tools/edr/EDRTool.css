@@ -30,6 +30,10 @@
   margin: 0;
 }
 
+.edr-empty-state__action {
+  margin-top: 4px;
+}
+
 .edr-empty-state__visual {
   height: 84px;
   width: 132px;
