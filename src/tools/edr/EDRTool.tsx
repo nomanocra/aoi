@@ -113,8 +113,8 @@ type SelectedNodeInfo = {
 // Collapsed groups use a fixed compact width (model units) instead of keeping
 // their full expanded width, so a folded folder is just wide enough for its
 // header (label + icons) / "N Items" row.
-const COLLAPSED_FOLDER_WIDTH = 150
-const COLLAPSED_FOLDER_FALLBACK_WIDTH = 150
+const COLLAPSED_FOLDER_WIDTH = 110
+const COLLAPSED_FOLDER_FALLBACK_WIDTH = 110
 const COLLAPSED_FOLDER_BODY_HEIGHT = 22
 const FOLDER_HEADER_HEIGHT = 24
 const FOLDER_HEADER_GAP = 2
@@ -212,7 +212,7 @@ function getGraphStyles(): StylesheetJson {
         'overlay-opacity': 0,
         shape: 'round-rectangle',
         'text-halign': 'center',
-        'text-margin-y': -12,
+        'text-margin-y': -3,
         'text-valign': 'center',
         width: 104,
       },
@@ -766,8 +766,10 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
       })
       const collapsedModelX = Number(domain.data('collapsedModelX'))
       const collapsedModelY = Number(domain.data('collapsedModelY'))
-      // Fixed compact width for collapsed folders (no longer the expanded width).
-      const collapsedWidth = COLLAPSED_FOLDER_WIDTH * zoom
+      // Fixed compact width for collapsed folders, in screen pixels so the folded
+      // group keeps a constant size regardless of zoom (its position still tracks
+      // the graph via the zoom/pan-projected top-left below).
+      const collapsedWidth = COLLAPSED_FOLDER_WIDTH
       const collapsedX = Number.isFinite(collapsedModelX) ? collapsedModelX * zoom + pan.x : box.x1
       const collapsedY = Number.isFinite(collapsedModelY) ? collapsedModelY * zoom + pan.y : box.y1
 
