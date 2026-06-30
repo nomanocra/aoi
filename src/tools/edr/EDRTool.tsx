@@ -225,7 +225,7 @@ function getGraphStyles(): StylesheetJson {
         'background-color': panelAlt,
         'border-color': border,
         color: muted,
-        height: 42,
+        height: 34,
         width: 86,
       },
     },
