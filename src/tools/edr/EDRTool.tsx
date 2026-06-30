@@ -177,12 +177,12 @@ function getGraphStyles(): StylesheetJson {
         content: 'data(label)',
         'font-family': 'Source Sans 3',
         'font-size': 16,
-        height: 42,
+        height: 34,
         'overlay-opacity': 0,
         shape: 'round-rectangle',
         'text-halign': 'center',
         'text-valign': 'center',
-        width: 138,
+        width: 104,
       },
     },
     {
@@ -216,7 +216,7 @@ function getGraphStyles(): StylesheetJson {
         'border-color': primary,
         color: primary,
         'font-weight': 700,
-        width: 172,
+        width: 132,
       },
     },
     {
@@ -226,7 +226,7 @@ function getGraphStyles(): StylesheetJson {
         'border-color': border,
         color: muted,
         height: 42,
-        width: 116,
+        width: 86,
       },
     },
     {
