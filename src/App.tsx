@@ -10,6 +10,13 @@ function App() {
   const [path, setPath] = useState(getCurrentPath)
   const route = resolveAoiRoute(path)
 
+  const title =
+    route.type === 'tool' ? `${route.tool.name} · AOI` : 'AOI · Airline Operations Intelligence'
+
+  useEffect(() => {
+    document.title = title
+  }, [title])
+
   useEffect(() => {
     const handlePopState = () => setPath(getCurrentPath())
 

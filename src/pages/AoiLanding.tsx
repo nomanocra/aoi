@@ -187,7 +187,13 @@ export function AoiLanding() {
               </div>
               <div className="aoi-home__grid">
                 {aoiTools.map((tool) => (
-                  <a key={tool.id} className="aoi-card aoi-card--link" {...linkProps(toolPath(tool))}>
+                  <a
+                    key={tool.id}
+                    className="aoi-card aoi-card--link"
+                    href={toolPath(tool)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Monitor className="aoi-card__icon" size={24} strokeWidth={1.8} aria-hidden="true" />
                     <div className="aoi-card__body">
                       <p className="aoi-card__title">{tool.name}</p>
