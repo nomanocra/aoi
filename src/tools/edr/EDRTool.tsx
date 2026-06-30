@@ -145,15 +145,23 @@ const COLLAPSED_FOLDER_FALLBACK_WIDTH = 110
 const COLLAPSED_FOLDER_BODY_HEIGHT = 22
 const FOLDER_HEADER_HEIGHT = 24
 const FOLDER_HEADER_GAP = 2
-const FOLDER_OVERLAY_OFFSET = 28
+// Space reserved above an open group's box for its header overlay. Kept equal to the header
+// height + gap so the box top lands exactly under the header — i.e. an open group's header sits
+// on its box just like a collapsed group's header sits on its "N Items" pill.
+const FOLDER_OVERLAY_OFFSET = FOLDER_HEADER_HEIGHT + FOLDER_HEADER_GAP
+// Padding for a group that contains other groups: the normal tight inset (16px) PLUS the header band
+// (FOLDER_OVERLAY_OFFSET) so a nested group's header overlay drops into its own clear strip below
+// this group's header instead of stacking on top of it.
+const SUBGROUP_HEADER_PADDING = 16 + FOLDER_OVERLAY_OFFSET
 // Gap kept between adjacent top-level containers. Generous enough that the aggregated cross-group
 // link labels (e.g. "area_id") sit in clear space rather than colliding with neighbouring folders.
 const CONTAINER_OVERLAP_GAP = 56
 // Tighter gap used between siblings INSIDE a group (a leaf node vs a subgroup folder, etc.).
 const INNER_SIBLING_GAP = 20
-// Cap for the default (fully-folded) view so a tightly-packed model doesn't zoom past a comfortable
-// scale and balloon the zoom-scaled entity nodes relative to the fixed-pixel collapsed folders.
-const DEFAULT_VIEW_MAX_ZOOM = 1
+// Default view zoom. Kept at 1:1 so the fixed-pixel folder overlays line up with the model-space
+// group rectangles — at any other zoom a collapsed subgroup's folder spills past its parent's
+// padding (smaller zoom) or the entity nodes balloon relative to the folders (larger zoom).
+const DEFAULT_VIEW_ZOOM = 1
 
 function cssVar(name: string, fallback: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
@@ -199,21 +207,33 @@ function getGraphStyles(): StylesheetJson {
         'background-opacity': 0.8,
         'border-color': borderSoft,
         'border-width': 1,
-        'bounds-expansion': '10px',
+        'bounds-expansion': '0px',
         'compound-sizing-wrt-labels': 'include',
         color: muted,
         content: '',
         'font-size': 12,
         'font-weight': 700,
-        'min-height': '120px',
-        'min-height-bias-top': '12%',
+        // The header (label + icons) is an HTML overlay sitting just above the box, so the
+        // compound should hug its children: no forced min-height (which used to reserve a tall
+        // empty band at the top) and a tight, symmetric padding — mirroring how a collapsed
+        // group's "N Items" pill sits right under its header.
+        'min-height': '0px',
         'min-width': '200px',
         'min-width-bias-left': '50%',
-        padding: '32px',
+        padding: '16px',
         'text-halign': 'left',
         'text-margin-x': -28,
         'text-margin-y': -24,
         'text-valign': 'top',
+      },
+    },
+    {
+      // A group that itself contains other groups needs extra room at the top: every nested group's
+      // header is an HTML overlay sitting ~28px ABOVE its own box, so without this band the child
+      // header would ride up into the parent's header. The padding reserves a clear strip for it.
+      selector: 'node[type = "domain"].has-subgroups',
+      style: {
+        padding: `${SUBGROUP_HEADER_PADDING}px`,
       },
     },
     {
@@ -356,6 +376,19 @@ function applyVisibility(cy: Core) {
       const shouldShow = isNodeRendered(edge.source()) && isNodeRendered(edge.target())
       edge.style('display', shouldShow ? 'element' : 'none')
     })
+  })
+}
+
+/**
+ * Invalidates every group's cached compound bounding box so the next read/render recomputes it.
+ * Cytoscape doesn't reliably invalidate an ANCESTOR group's bounds when a descendant moves while
+ * hidden (which happens when we re-place a folded group's children as it opens), nor always after a
+ * batched reposition — leaving a parent that fails to grow around a freshly expanded subgroup. This
+ * clears the cache up the whole hierarchy without moving anything, so groups resize to fit.
+ */
+function refreshCompoundBounds(cy: Core) {
+  cy.nodes().forEach((node) => {
+    ;(node as unknown as { dirtyCompoundBoundsCache?: () => void }).dirtyCompoundBoundsCache?.()
   })
 }
 
@@ -549,6 +582,9 @@ function separateSiblings(cy: Core, siblings: NodeSingular[], gap: number) {
   const maxPasses = 16
   for (let pass = 0; pass < maxPasses; pass += 1) {
     let moved = false
+    // Group boxes are cached; a sibling moved in the previous pass (or a subgroup just expanded) may
+    // leave a stale box, so clear the cache before re-measuring this pass.
+    refreshCompoundBounds(cy)
     const items = nodes.map((node) => ({ node, box: getContainerRenderedBox(node) }))
 
     for (let i = 0; i < items.length; i += 1) {
@@ -608,6 +644,10 @@ function resolveContainerOverlaps(cy: Core) {
     .filter((node) => (node as NodeSingular).parent().empty() && (node as NodeSingular).visible())
     .map((node) => node as NodeSingular)
   separateSiblings(cy, topLevel, CONTAINER_OVERLAP_GAP)
+
+  // After all the repositioning, clear the bounds cache once more so the final render and the folder
+  // overlays (which read group boxes) reflect every group's settled size.
+  refreshCompoundBounds(cy)
 }
 
 /**
@@ -1068,13 +1108,18 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
     // Domains (groups) can be tapped to collapse but must not be selectable.
     cy.nodes('[type = "domain"]').unselectify()
 
+    // Flag groups that directly contain another group so they reserve a header strip for it.
+    cy.nodes('[type = "domain"]').forEach((domain) => {
+      if (domain.children('[type = "domain"]').nonempty()) domain.addClass('has-subgroups')
+    })
+
     runCollisionSafeLayout(cy, false, () => {
       collapseAllDomainFolders(cy)
-      // Pin the display to a 1:1 zoom up front, then pack and de-overlap the folded containers AT
-      // that zoom. Collapsed folders are a fixed pixel size while entity nodes scale with zoom, so
-      // doing the spacing maths at the final zoom is the only way gaps stay consistent for both —
-      // compacting at one zoom and viewing at another is what makes folders overlap or balloon.
-      if (cy.zoom() > DEFAULT_VIEW_MAX_ZOOM) cy.zoom(DEFAULT_VIEW_MAX_ZOOM)
+      // Pin the display to a 1:1 zoom, then pack the folded containers to fit at that scale. Folder
+      // overlays are a fixed PIXEL size while groups size in MODEL space; only at 1:1 do a collapsed
+      // subgroup's 110px body and 28px header sit within its parent's (model-space) padding instead
+      // of spilling out — and entity nodes read at the same scale as the folders.
+      cy.zoom(DEFAULT_VIEW_ZOOM)
       compactContainers(cy)
       resolveContainerOverlaps(cy)
       cy.center()
