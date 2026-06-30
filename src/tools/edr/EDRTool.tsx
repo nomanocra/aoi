@@ -143,6 +143,12 @@ type SelectedNodeInfo = {
 const COLLAPSED_FOLDER_WIDTH = 110
 const COLLAPSED_FOLDER_FALLBACK_WIDTH = 110
 const COLLAPSED_FOLDER_BODY_HEIGHT = 22
+// Leaf table/external boxes hug their label: width tracks the rendered text (width: 'label') with
+// NODE_LABEL_PADDING of breathing room on each side. Cytoscape's `padding` inflates BOTH axes around
+// the label, so to keep the original ~34px visual height we shrink the model height by 2×padding —
+// the padding then adds it right back: rendered height ≈ NODE_BODY_HEIGHT + 2×NODE_LABEL_PADDING = 34.
+const NODE_LABEL_PADDING = 10
+const NODE_BODY_HEIGHT = 34 - NODE_LABEL_PADDING * 2
 const FOLDER_HEADER_HEIGHT = 24
 const FOLDER_HEADER_GAP = 2
 // Space reserved above an open group's box for its header overlay. Kept equal to the header
@@ -191,13 +197,16 @@ function getGraphStyles(): StylesheetJson {
         content: 'data(label)',
         'font-family': 'Source Sans 3',
         'font-size': 16,
-        height: 34,
+        // See NODE_BODY_HEIGHT / NODE_LABEL_PADDING: the box hugs its label (width: 'label') so long
+        // table names no longer overflow, while padding restores a fixed ~34px visual height.
+        height: NODE_BODY_HEIGHT,
         'overlay-opacity': 0,
+        padding: `${NODE_LABEL_PADDING}px`,
         shape: 'round-rectangle',
         'text-halign': 'center',
         'text-margin-y': -3,
         'text-valign': 'center',
-        width: 104,
+        width: 'label',
       },
     },
     {
@@ -243,7 +252,6 @@ function getGraphStyles(): StylesheetJson {
         'border-color': primary,
         color: primary,
         'font-weight': 700,
-        width: 132,
       },
     },
     {
@@ -252,8 +260,6 @@ function getGraphStyles(): StylesheetJson {
         'background-color': panelAlt,
         'border-color': border,
         color: muted,
-        height: 34,
-        width: 86,
       },
     },
     {
