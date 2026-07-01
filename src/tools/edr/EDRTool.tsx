@@ -1234,11 +1234,10 @@ function EDRCatalogGraph({ catalogue }: { catalogue: string }) {
 
     cy.on('tap', 'node[type != "domain"]', (event) => {
       const node = event.target
+      // Everything fades except the tapped node itself — its neighbours, edges
+      // and parent group all dim so the selection stands alone.
       cy.elements().addClass('is-faded')
       node.removeClass('is-faded')
-      node.connectedEdges().removeClass('is-faded')
-      node.connectedEdges().connectedNodes().removeClass('is-faded')
-      node.ancestors().removeClass('is-faded')
 
       const relations: SelectedRelation[] = node.connectedEdges().map((edge: EdgeSingular) => {
         const isSource = edge.source().id() === node.id()
